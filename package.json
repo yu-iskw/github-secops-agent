@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pnpm --recursive build",
     "trunk": "trunk",
-    "format": "pnpm format:trunk",
+    "format": "pnpm format:trunk && pnpm format:eslint && pnpm format:prettier",
     "format:all": "pnpm format:trunk-all",
     "format:eslint": "eslint . --fix",
     "format:prettier": "prettier --write .",
