@@ -1,6 +1,6 @@
 # Copilot continuation policy (nudge rounds)
 
-Use this text when posting **nudge** comments on the SecOps issue (after [secops-check-pr-checks](../../secops-check-pr-checks/SKILL.md) reports failing or pending checks). Keep instructions **short**; the full remediation rules live in [secops-create-remediation-issue security prompt](../../secops-create-remediation-issue/references/security_remedation_prompt.md).
+Use this text when posting **nudge** comments on the SecOps issue (after [secops-check-pr-checks](../../secops-check-pr-checks/SKILL.md) reports failing or pending checks). Keep instructions **short**; the full remediation rules live in [secops-assign-copilot-to-issue security prompt](../../secops-assign-copilot-to-issue/references/security_remedation_prompt.md).
 
 ## Principles
 

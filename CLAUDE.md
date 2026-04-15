@@ -5,6 +5,7 @@ This repository defines **SecOps dependency remediation orchestration**: **granu
 ## Documentation
 
 - **Product design:** [docs/produt_design.md](docs/produt_design.md)
+- **Copilot issue assignment (one-shot vs deferred):** [docs/secops-copilot-issue-assignment.md](docs/secops-copilot-issue-assignment.md)
 - **Config schema:** [docs/secops-agent-config.md](docs/secops-agent-config.md)
 - **Config file:** copy `.github-secops-agent.json.template` to `.github-secops-agent.json` and edit.
 - **Architecture decisions (ADRs):** [docs/adr/README.md](docs/adr/README.md) — when and how to add records under `docs/adr/`.

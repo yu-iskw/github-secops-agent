@@ -31,3 +31,7 @@ Assignment semantics and GHES limits: [../secops-create-remediation-issue/refere
 
 - **No `git push`** to the target repository.
 - Do not use this skill to **create** issues—use **secops-create-remediation-issue** with `--body-file`.
+
+## References
+
+- **[security_remedation_prompt.md](references/security_remedation_prompt.md)** — canonical long-form Copilot remediation rules (supply-chain scope, host constraints, phases). **secops-create-remediation-issue** concatenates this into `--body-file` when opening an issue; this skill only adds **`@copilot`** when assign was deferred (e.g. after Project link).
