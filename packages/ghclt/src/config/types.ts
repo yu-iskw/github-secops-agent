@@ -10,7 +10,7 @@ export interface SecOpsGithubProject {
   title?: string;
 }
 
-/** Parsed `.github-secops-agent.json` (see docs/secops-agent-config.md). */
+/** Parsed `.github-secops-agent.json` (see repo root `.github-secops-agent.json.template`). */
 export interface SecOpsConfig {
   version: number;
   organizations: SecOpsOrganization[];

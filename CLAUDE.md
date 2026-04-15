@@ -4,10 +4,8 @@ This repository defines **SecOps dependency remediation orchestration**: **granu
 
 ## Documentation
 
-- **Product design:** [docs/produt_design.md](docs/produt_design.md)
-- **Copilot issue assignment (one-shot vs deferred):** [docs/secops-copilot-issue-assignment.md](docs/secops-copilot-issue-assignment.md)
-- **Config schema:** [docs/secops-agent-config.md](docs/secops-agent-config.md)
-- **Config file:** copy `.github-secops-agent.json.template` to `.github-secops-agent.json` and edit.
+- **Product design:** [docs/product_design.md](docs/product_design.md)
+- **Config file:** copy [.github-secops-agent.json.template](.github-secops-agent.json.template) to `.github-secops-agent.json` and edit (field descriptions are in the template).
 - **Architecture decisions (ADRs):** [docs/adr/README.md](docs/adr/README.md) — when and how to add records under `docs/adr/`.
 
 ## Claude Code documentation
@@ -63,9 +61,9 @@ Build once: `pnpm --filter @github-secops-agent/ghclt build`.
 - `node packages/ghclt/dist/cli.js validate-config --config .github-secops-agent.json`
 - `node packages/ghclt/dist/cli.js validate-repo OWNER/REPO --config .github-secops-agent.json`
 - `node packages/ghclt/dist/cli.js validate-org ORG --config .github-secops-agent.json`
-- `node packages/ghclt/scripts/run-discover-queue.cjs .github-secops-agent.json` — JSON work queue from Dependabot alerts (injects `gh`; org API with automatic per-repo fallback; see [docs/secops-agent-config.md](docs/secops-agent-config.md) `preferPerRepo`).
+- `node packages/ghclt/scripts/run-discover-queue.cjs .github-secops-agent.json` — JSON work queue from Dependabot alerts (injects `gh`; org API with automatic per-repo fallback; see [.github-secops-agent.json.template](.github-secops-agent.json.template) `preferPerRepo`).
 
-SecOps skill scripts under [`.claude/skills/`](.claude/skills/) call this **before** `gh` so issues are not opened against unexpected orgs/repos. See [docs/secops-agent-config.md](docs/secops-agent-config.md) **Canonical guard stanza**.
+SecOps skill scripts under [`.claude/skills/`](.claude/skills/) call this **before** `gh` so issues are not opened against unexpected orgs/repos. See [.github-secops-agent.json.template](.github-secops-agent.json.template) **Canonical guard stanza**.
 
 ## Optional helpers
 

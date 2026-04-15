@@ -15,7 +15,7 @@ description: Create a SecOps remediation issue on the target repo (after policy 
 
 - **Target:** `owner/repo`.
 - **Alert context:** GHSA/CVE summaries for the issue body (append after the canonical prompt).
-- **Canonical prompt (in-repo):** [../secops-assign-copilot-to-issue/references/security_remedation_prompt.md](../secops-assign-copilot-to-issue/references/security_remedation_prompt.md) — **authoritative** instruction block for Copilot; versioned with this repository (owned by **secops-assign-copilot-to-issue**).
+- **Canonical prompt (in-repo):** [references/security_remedation_prompt.md](references/security_remedation_prompt.md) — **authoritative** instruction block for Copilot; versioned with this repository.
 - **Optional external mirror:** [Supply-chain remediation gist](https://gist.github.com/yu-iskw/7a7412abd7d332fc09f428b8d0d90998) — use if your org standardizes on the URL; keep content aligned with the reference file above.
 - **Project:** On-create `--project` (script), or link later via the **secops-project-board-sync** sub-agent (Task tool) / **gh-project-management**.
 
@@ -34,7 +34,7 @@ Concatenate the security reference with **Tracking** / **Alerts** (and any orche
 ```bash
 # From repo root; adjust paths and alert text
 {
-  cat .claude/skills/secops-assign-copilot-to-issue/references/security_remedation_prompt.md
+  cat .claude/skills/secops-create-remediation-issue/references/security_remedation_prompt.md
   echo ""
   echo "## Tracking"
   echo "- Repo: org/repo"
@@ -53,7 +53,7 @@ Title (e.g. `SecOps: dependency remediation (orchestrated)`), then the **securit
 ## Constraints
 
 - **No `git push`** to the target repository.
-- Prompts aligned with **minimal bumps** and **required CI green** per [security_remedation_prompt.md](../secops-assign-copilot-to-issue/references/security_remedation_prompt.md).
+- Prompts aligned with **minimal bumps** and **required CI green** per [security_remedation_prompt.md](references/security_remedation_prompt.md).
 
 ## Handoff
 
@@ -61,5 +61,5 @@ Issue **URL** and number → **secops-check-pr-checks**, **secops-project-board-
 
 ## References
 
-- [security_remedation_prompt.md](../secops-assign-copilot-to-issue/references/security_remedation_prompt.md) (canonical Copilot task spec)
+- [security_remedation_prompt.md](references/security_remedation_prompt.md) (canonical Copilot task spec)
 - [gh-issue-copilot.md](references/gh-issue-copilot.md)

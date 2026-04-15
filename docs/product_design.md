@@ -107,7 +107,7 @@ sequenceDiagram
 
 ### Concurrency: orchestrator vs Copilot queue
 
-- **`maxConcurrentRepos`** (see [secops-agent-config.md](./secops-agent-config.md)) limits how many **repo threads** run **discovery, issue creation, Project linking, and polling** at once. It does **not** control GitHub’s **Copilot agent queue**—treat Copilot as **platform-managed** work.
+- **`maxConcurrentRepos`** (see [`.github-secops-agent.json.template`](../.github-secops-agent.json.template)) limits how many **repo threads** run **discovery, issue creation, Project linking, and polling** at once. It does **not** control GitHub’s **Copilot agent queue**—treat Copilot as **platform-managed** work.
 - Design **does not** require parallel **Copilot** execution; optionally parallelize only **upstream** steps across repos.
 
 ```mermaid
@@ -216,7 +216,7 @@ stateDiagram-v2
 
 ## Configuration
 
-- **SecOps policy:** [`.github-secops-agent.json`](../.github-secops-agent.json.template) (copy template to repo root or path documented in `CLAUDE.md`). Schema and fields: [secops-agent-config.md](./secops-agent-config.md).
+- **SecOps policy:** [`.github-secops-agent.json`](../.github-secops-agent.json.template) (copy template to repo root or path documented in `CLAUDE.md`). Field descriptions live in the template.
 - **GitHub Project binding:** [`.github/project-config.json`](#github-project-config) — produced by **`gh-set-active-project`** from [github-project-skills](https://github.com/yu-iskw/github-project-skills).
 
 ### GitHub Project config

@@ -12,7 +12,7 @@ SecOps automation must not mutate GitHub state against organization policy. Oper
 
 ## Decision
 
-1. **Single policy source:** One policy file shape, documented and validated against the same schema used at runtime (see `docs/secops-agent-config.md` and `.github-secops-agent.json.template`).
+1. **Single policy source:** One policy file shape, documented and validated against the same schema used at runtime (see `.github-secops-agent.json.template` and `packages/ghclt` validation).
 2. **Programmatic checks:** The `packages/ghclt` library exposes `validateTargetRepository` and `validateOrganizationId` so callers enforce the same rules as the guard CLI.
 3. **Mandatory gate:** The `github-secops-guard` CLI (bin from `ghclt`) must exit successfully before any skill or script performs mutations via `gh` or other GitHub APIs. No bypass path for “quick” runs.
 4. **Discovery from config only:** Skills that loop over organizations read allowed orgs **only** from the configured policy (e.g. with `jq`), not from ad hoc lists or environment defaults that widen scope.

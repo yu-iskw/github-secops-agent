@@ -13,7 +13,7 @@ description: Discover target repositories for SecOps dependency remediation usin
 
 ## Inputs
 
-- **Config:** `.github-secops-agent.json` (copy from `.github-secops-agent.json.template`; see [docs/secops-agent-config.md](../../../docs/secops-agent-config.md)).
+- **Config:** `.github-secops-agent.json` (copy from [.github-secops-agent.json.template](../../../.github-secops-agent.json.template); field descriptions are in the template).
 - **Auth:** `gh auth status` must succeed for the target orgs.
 
 ## Outputs

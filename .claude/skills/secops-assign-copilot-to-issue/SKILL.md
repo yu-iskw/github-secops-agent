@@ -34,4 +34,4 @@ Assignment semantics and GHES limits: [../secops-create-remediation-issue/refere
 
 ## References
 
-- **[security_remedation_prompt.md](references/security_remedation_prompt.md)** — canonical long-form Copilot remediation rules (supply-chain scope, host constraints, phases). **secops-create-remediation-issue** concatenates this into `--body-file` when opening an issue; this skill only adds **`@copilot`** when assign was deferred (e.g. after Project link).
+- **[security_remedation_prompt.md](../secops-create-remediation-issue/references/security_remedation_prompt.md)** — canonical long-form Copilot remediation rules (supply-chain scope, host constraints, phases). **secops-create-remediation-issue** concatenates this into `--body-file` when opening an issue; this skill only adds **`@copilot`** when assign was deferred (e.g. after Project link).
