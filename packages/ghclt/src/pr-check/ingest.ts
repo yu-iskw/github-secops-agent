@@ -3,7 +3,7 @@ import type { SecOpsConfig } from '../config/types';
 import { validateTargetRepository } from '../policy/target-policy';
 import { composePrCheckJson, parseGhWorkflowRunsStdout } from './result';
 
-export type PrCheckIngestFlags = {
+type PrCheckIngestFlags = {
   repoFull: string;
   prJsonFile: string;
   runsJsonFile?: string;
