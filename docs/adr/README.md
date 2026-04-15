@@ -32,7 +32,7 @@ Skip an ADR for small fixes, typos, or one-off refactors with no lasting design 
 1. From the repository root, create a new ADR (non-interactive stub):
 
    ```bash
-   .claude/skills/manage-adr/scripts/create-adr.sh "Short imperative title"
+   .claude/skills/dev/manage-adr/scripts/create-adr.sh "Short imperative title"
    ```
 
    The script prints the new file path (for example `docs/adr/0003-your-title.md`).
@@ -42,9 +42,9 @@ Skip an ADR for small fixes, typos, or one-off refactors with no lasting design 
 3. To **supersede** an older ADR instead of editing it in place:
 
    ```bash
-   .claude/skills/manage-adr/scripts/create-adr.sh -s <N> "New decision title"
+   .claude/skills/dev/manage-adr/scripts/create-adr.sh -s <N> "New decision title"
    ```
 
 4. Verify: `adr list` from the repo root.
 
-Full agent-oriented instructions: [.claude/skills/manage-adr/SKILL.md](../../.claude/skills/manage-adr/SKILL.md).
+Full agent-oriented instructions: [.claude/skills/dev/manage-adr/SKILL.md](../../.claude/skills/dev/manage-adr/SKILL.md).

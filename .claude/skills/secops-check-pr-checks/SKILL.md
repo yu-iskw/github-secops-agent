@@ -32,20 +32,38 @@ gh pr view BRANCH --repo OWNER/REPO --json url,number,statusCheckRollup
 
 ## Shell script (primary)
 
-**[scripts/check-repo-ci.sh](scripts/check-repo-ci.sh)** — `validate-repo`, then human-readable `gh pr checks` on stderr, then **one JSON object on stdout** with at least:
+**[scripts/check-repo-ci.sh](scripts/check-repo-ci.sh)** — runs **`validate-repo`**, then **`gh pr view`** / optional **`gh run list`** (shell), human-readable **`gh pr checks`** on stderr, then **`github-secops-guard pr-check --pr-json-file …`** (Node does **not** invoke `gh`; it classifies saved JSON).
 
 - `outcome`: `green` | `failing` | `pending` | `blocked_manual_ci` | `unknown`
 - `pr`, `url`, `mergeStateStatus`, `mergeable`, `headRefName`, `checksSummary`
+- Optional: `isDraft`, `reviewDecision` (code-review signals; not CI approval)
+- Optional: `blockedHint`: `"workflow_action_required"` when **`gh run list`** shows any run with `conclusion: action_required` (e.g. approve workflows / environment gates)
+- Optional: `workflowRunsAnalyzed` — number of runs parsed when the run list was fetched (omitted if `--no-runs`)
 
 **Exit codes:** `0` = green, `1` = failing, `2` = pending or unknown, `3` = `blocked_manual_ci` (heuristic).
 
-Classification uses `gh pr view --json statusCheckRollup,mergeStateStatus,...` and **`jq`**. If `jq` is missing, the script prints PR JSON with `outcome: "unknown"` and exits `2` (install **`jq`** for full behavior).
+Classification is implemented in **`packages/ghclt`** (TypeScript), matching the previous `jq` behavior for rollup + `mergeStateStatus`.
 
 ```bash
 .claude/skills/secops-check-pr-checks/scripts/check-repo-ci.sh --repo OWNER/REPO --pr NUMBER
+.claude/skills/secops-check-pr-checks/scripts/check-repo-ci.sh --repo OWNER/REPO --pr NUMBER --no-runs
 ```
 
-**Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, `gh`, **`jq`**. Optional `SECOPS_CONFIG`. Self-contained; `validate-repo` prevents checks against out-of-policy repos.
+**Direct CLI** (after you have JSON files from `gh`; optional **`--runs-json-file`**):
+
+```bash
+pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
+  --repo OWNER/REPO \
+  --config /path/to/.github-secops-agent.json \
+  --pr-json-file /tmp/pr.json \
+  [--runs-json-file /tmp/runs.json]
+```
+
+**Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, **`gh`**. Optional `SECOPS_CONFIG`. Policy guard prevents checks against out-of-policy repos.
+
+### When the rollup is empty
+
+`statusCheckRollup` can be **empty** while **`mergeStateStatus`** is **BLOCKED** (no queued checks yet). That often means **policy / approval** (including **workflow approval**). Use **`blockedHint`** when present, or inspect **`gh run list`** / the Actions tab on the PR’s head branch.
 
 ## Orchestration (sub-agents and batch runners)
 
@@ -64,7 +82,7 @@ Classification uses `gh pr view --json statusCheckRollup,mergeStateStatus,...` a
 | `failing`           | **UNSTABLE** or any check **FAILURE** / **TIMED_OUT** / **CANCELLED**                                              | **secops-post-ci-nudge-comment** if rounds allow; else mark blocked on repeated failure                           |
 | `pending`           | Checks still **QUEUED** / **IN_PROGRESS** / **WAITING** / **PENDING**                                              | Sub-agent: re-run this skill after **`pollIntervalSeconds`** (or investigate if stuck)                            |
 | `blocked_manual_ci` | **BLOCKED**, no failures and no in-flight checks in rollup (often approval, policy, or branch rules)—**heuristic** | Label `blocked:manual-ci`, **notify user**, do not spin nudges forever                                            |
-| `unknown`           | Does not match above (or no `jq`)                                                                                  | Sub-agent: treat like pending or investigate with `gh pr view` / `gh run list`                                    |
+| `unknown`           | Does not match the rollup + merge-state rules above                                                                | Sub-agent: treat like pending or investigate with `gh pr view` / `gh run list`                                    |
 
 **Heuristic caveat:** `blocked_manual_ci` is **best-effort**. Validate against your org’s branch protection and environment rules.
 

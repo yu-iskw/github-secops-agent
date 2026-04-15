@@ -49,7 +49,7 @@ Override config path: `export SECOPS_CONFIG=/path/to/.github-secops-agent.json`.
 | `minimumSeverity` | `string`  | e.g. `low` \| `medium` \| `high` \| `critical` — filter alerts before enqueueing a repo.                                                                               |
 | `preferPerRepo`   | `boolean` | Optional. Default `false`. If `true`, discovery **skips** org-level Dependabot alerts and uses **per-repo** APIs only (for tokens without org-level alert permission). |
 
-**Note:** Org-level `GET /orgs/{org}/dependabot/alerts` requires a token with **`security_events`** and org access where applicable. If that call fails (**403** / **404**), `github-secops-guard discover-queue` **automatically falls back** to listing org repos (`GET /orgs/{org}/repos`) and then per-repo Dependabot alerts, subject to `includedRepositories` / `excludedRepositories`. If both org alerts and org repo listing fail, use **`preferPerRepo`: `true`** and explicit **`includedRepositories`** (exact `owner/repo` rows work without listing).
+**Note:** Org-level `GET /orgs/{org}/dependabot/alerts` requires a token with **`security_events`** and org access where applicable. If that call fails (**403** / **404**), `runDiscoverQueue` (e.g. via `run-discover-queue.cjs`) **automatically falls back** to listing org repos (`GET /orgs/{org}/repos`) and then per-repo Dependabot alerts, subject to `includedRepositories` / `excludedRepositories`. If both org alerts and org repo listing fail, use **`preferPerRepo`: `true`** and explicit **`includedRepositories`** (exact `owner/repo` rows work without listing).
 
 ## `orchestration`
 

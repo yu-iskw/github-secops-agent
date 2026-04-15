@@ -5,15 +5,15 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 CONFIG="${SECOPS_CONFIG:-$ROOT/.github-secops-agent.json}"
-CLI="$ROOT/packages/ghclt/dist/cli.js"
+RUNNER="$ROOT/packages/ghclt/scripts/run-discover-queue.cjs"
 
 if [[ ! -f $CONFIG ]]; then
 	echo "secops: missing config: $CONFIG (copy from .github-secops-agent.json.template)" >&2
 	exit 1
 fi
-if [[ ! -f $CLI ]]; then
-	echo "secops: build ghclt first: pnpm --filter @github-secops-agent/ghclt build" >&2
+if [[ ! -f $RUNNER ]]; then
+	echo "secops: missing $RUNNER (build ghclt first: pnpm --filter @github-secops-agent/ghclt build)" >&2
 	exit 1
 fi
 
-exec node "$CLI" discover-queue --config "$CONFIG"
+exec node "$RUNNER" "$CONFIG"

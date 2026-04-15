@@ -47,11 +47,13 @@ Other plugin skills used with SecOps flows: **`gh-issue-management`**, **`gh-pro
 | [secops-post-ci-nudge-comment](.claude/skills/secops-post-ci-nudge-comment/SKILL.md)             | Nudge Copilot on failing CI (issue comment)                          |
 | [secops-post-remediation-evidence](.claude/skills/secops-post-remediation-evidence/SKILL.md)     | Post remediation evidence on issue                                   |
 
-| Sub-agent                                                                | Purpose                                    |
-| ------------------------------------------------------------------------ | ------------------------------------------ |
-| [secops-batch-orchestrator](.claude/agents/secops-batch-orchestrator.md) | Batch queue + concurrency                  |
-| [secops-repo-runner](.claude/agents/secops-repo-runner.md)               | Single-repo lifecycle                      |
-| [secops-project-board-sync](.claude/agents/secops-project-board-sync.md) | Sync GitHub Project fields (plugin skills) |
+| Sub-agent                     | Purpose                                    |
+| ----------------------------- | ------------------------------------------ |
+| **secops-batch-orchestrator** | Batch queue + concurrency                  |
+| **secops-repo-runner**        | Single-repo lifecycle                      |
+| **secops-project-board-sync** | Sync GitHub Project fields (plugin skills) |
+
+Sub-agent files under `.claude/agents/` are not in the repo yet; they will be added in a later, organized pass.
 
 ## Policy guard CLI (`github-secops-guard`)
 
@@ -60,13 +62,13 @@ Build once: `pnpm --filter @github-secops-agent/ghclt build`.
 - `node packages/ghclt/dist/cli.js validate-config --config .github-secops-agent.json`
 - `node packages/ghclt/dist/cli.js validate-repo OWNER/REPO --config .github-secops-agent.json`
 - `node packages/ghclt/dist/cli.js validate-org ORG --config .github-secops-agent.json`
-- `node packages/ghclt/dist/cli.js discover-queue --config .github-secops-agent.json` — JSON work queue from Dependabot alerts (org API with automatic per-repo fallback; see [docs/secops-agent-config.md](docs/secops-agent-config.md) `preferPerRepo`).
+- `node packages/ghclt/scripts/run-discover-queue.cjs .github-secops-agent.json` — JSON work queue from Dependabot alerts (injects `gh`; org API with automatic per-repo fallback; see [docs/secops-agent-config.md](docs/secops-agent-config.md) `preferPerRepo`).
 
 SecOps skill scripts under [`.claude/skills/`](.claude/skills/) call this **before** `gh` so issues are not opened against unexpected orgs/repos. See [docs/secops-agent-config.md](docs/secops-agent-config.md) **Canonical guard stanza**.
 
 ## Optional helpers
 
-[`packages/ghclt`](packages/ghclt) provides config validation, target policy checks, `github-secops-guard`, and **`gh`** command builders for scripts and tests.
+[`packages/ghclt`](packages/ghclt) provides config validation, target policy checks, `github-secops-guard`, PR/queue **parsers**, and **`gh` argv builders** (gh is invoked from skills/shells, not from the library).
 
 ## CODEOWNERS
 

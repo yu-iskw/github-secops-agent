@@ -18,7 +18,7 @@ description: Discover target repositories for SecOps dependency remediation usin
 
 ## Outputs
 
-- **JSON queue (stdout):** One document from **`github-secops-guard discover-queue`** with `organizations[].repos[]` (`fullName`, `worstSeverity`, `oldestOpenAlertAt`, `alerts[]`), **`organizations[].source`** (`dependabot_org_api` or `dependabot_per_repo_fallback`), and optional **`notes`** (e.g. policy filtering, listing failures).
+- **JSON queue (stdout):** One document from **`packages/ghclt/scripts/run-discover-queue.cjs`** (injects `gh`; the library does not spawn `gh`) with `organizations[].repos[]` (`fullName`, `worstSeverity`, `oldestOpenAlertAt`, `alerts[]`), **`organizations[].source`** (`dependabot_org_api` or `dependabot_per_repo_fallback`), and optional **`notes`** (e.g. policy filtering, listing failures).
 - **Priority:** Repos sorted per **`orchestration.priority`** (e.g. `severity`, then `oldest_alert`).
 - **Filtering:** **`includedRepositories`** / **`excludedRepositories`**, **`discovery.minimumSeverity`**, and **`discovery.preferPerRepo`** (skip org-level alerts; use per-repo APIs only).
 
@@ -28,11 +28,11 @@ description: Discover target repositories for SecOps dependency remediation usin
 2. **Automatic fallback** — If that call fails (**403**, **404**, etc.) or **`preferPerRepo`** is set, enumerate candidates via **`gh api orgs/ORG/repos --paginate`**, apply policy, then **`gh api repos/OWNER/REPO/dependabot/alerts --paginate`** per allowed repo. If org repo listing fails, exact **`includedRepositories`** entries (no `*`) can still be used as candidates.
 3. **Severity** — Taken from `security_advisory.severity` / `security_vulnerability.severity`; open alerts only; compared to **`discovery.minimumSeverity`**.
 
-Manual **`jq`** examples are optional for debugging raw `gh api` output; the supported path is **`discover-queue`**.
+Manual **`jq`** examples are optional for debugging raw `gh api` output; the supported path is **`run-discover-queue.cjs`** (or embed `runDiscoverQueue` with your own `gh` runner).
 
 ## Shell script / CLI
 
-**[scripts/discover-repos.sh](scripts/discover-repos.sh)** runs **`github-secops-guard discover-queue`** with `--config` (default: repo root `.github-secops-agent.json`); orgs come **only** from config, never argv. Same as `node packages/ghclt/dist/cli.js discover-queue --config …`. Prerequisites: `pnpm --filter @github-secops-agent/ghclt build`, `gh`; optional `SECOPS_CONFIG`. Config is validated inside **`discover-queue`**; scripts stay self-contained (no shared `common.sh`).
+**[scripts/discover-repos.sh](scripts/discover-repos.sh)** runs **`packages/ghclt/scripts/run-discover-queue.cjs`** with the config path (default: repo root `.github-secops-agent.json`); orgs come **only** from config, never argv. Prerequisites: `pnpm --filter @github-secops-agent/ghclt build`, `gh`; optional `SECOPS_CONFIG`.
 
 ## Constraints
 

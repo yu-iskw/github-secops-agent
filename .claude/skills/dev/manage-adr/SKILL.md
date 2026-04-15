@@ -31,7 +31,7 @@ This ensures records are created in `docs/adr`.
 To create a new ADR, use the provided script to ensure non-interactive creation:
 
 ```bash
-.claude/skills/manage-adr/scripts/create-adr.sh "Title of the ADR"
+.claude/skills/dev/manage-adr/scripts/create-adr.sh "Title of the ADR"
 ```
 
 After creation, the script will output the filename. You **MUST** then edit the file to fill in the Context, Decision, and Consequences.
@@ -41,7 +41,7 @@ After creation, the script will output the filename. You **MUST** then edit the 
 If a new decision replaces an old one, use the `-s` flag:
 
 ```bash
-.claude/skills/manage-adr/scripts/create-adr.sh -s <old-adr-number> "New Decision Title"
+.claude/skills/dev/manage-adr/scripts/create-adr.sh -s <old-adr-number> "New Decision Title"
 ```
 
 ### 4. Linking ADRs

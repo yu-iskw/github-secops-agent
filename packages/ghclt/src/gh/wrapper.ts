@@ -1,5 +1,3 @@
-import { spawnSync } from 'node:child_process';
-
 /** `gh api` args for org Dependabot alerts (paginated). */
 export function ghApiDependabotAlertsOrgArgs(org: string): readonly string[] {
   if (!org || typeof org !== 'string') {
@@ -16,7 +14,11 @@ export function ghPrChecksArgs(owner: string, repo: string, prNumber: number): r
   return ['pr', 'checks', String(prNumber), '--repo', `${owner}/${repo}`];
 }
 
-/** `gh pr view` JSON for status rollup. */
+/** Fields for `gh pr view --json` (PR CI classification + display). */
+export const GH_PR_VIEW_JSON_FIELDS =
+  'statusCheckRollup,mergeStateStatus,url,number,mergeable,headRefName,isDraft,reviewDecision' as const;
+
+/** `gh pr view` JSON for status rollup and merge metadata. */
 export function ghPrViewJsonArgs(owner: string, repo: string, prNumber: number): readonly string[] {
   if (!owner || !repo || !Number.isFinite(prNumber) || prNumber < 1) {
     throw new Error('owner, repo, and positive prNumber are required');
@@ -28,18 +30,33 @@ export function ghPrViewJsonArgs(owner: string, repo: string, prNumber: number):
     '--repo',
     `${owner}/${repo}`,
     '--json',
-    'statusCheckRollup,mergeStateStatus,url,number',
+    GH_PR_VIEW_JSON_FIELDS,
   ];
 }
 
-/**
- * Run `gh` with the given arguments (thin wrapper for scripts; tests avoid calling this).
- */
-export function runGh(args: readonly string[]): { ok: boolean; stdout: string; stderr: string } {
-  const r = spawnSync('gh', [...args], { encoding: 'utf-8' });
-  return {
-    ok: r.status === 0,
-    stdout: r.stdout ?? '',
-    stderr: r.stderr ?? '',
-  };
+/** `gh run list` JSON for workflow approval / action_required signals. */
+export function ghRunListForBranchArgs(
+  owner: string,
+  repo: string,
+  branch: string,
+  limit: number,
+): readonly string[] {
+  if (!owner || !repo || !branch) {
+    throw new Error('owner, repo, and branch are required');
+  }
+  if (!Number.isFinite(limit) || limit < 1 || limit > 100) {
+    throw new Error('limit must be between 1 and 100');
+  }
+  return [
+    'run',
+    'list',
+    '--repo',
+    `${owner}/${repo}`,
+    '--branch',
+    branch,
+    '--limit',
+    String(limit),
+    '--json',
+    'databaseId,workflowName,conclusion,status,displayTitle,url,headBranch',
+  ];
 }

@@ -2,9 +2,10 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { validateSecopsConfig } from './config/validate';
+import type { SecOpsConfig } from './config/types';
 import { validateGithubProjectBinding } from './policy/project-binding';
 import { validateOrganizationId, validateTargetRepository } from './policy/target-policy';
-import { runDiscoverQueue } from './queue/discover-queue';
+import { parsePrCheckIngestArgs, runPrCheckIngest } from './pr-check/ingest';
 
 function usage(): void {
   process.stderr.write(`github-secops-guard — validate policy before gh mutations
@@ -14,18 +15,21 @@ Usage:
     (also checks .github/project-config.json vs githubProject when projectNodeId is set)
   github-secops-guard validate-repo OWNER/REPO [--config PATH]
   github-secops-guard validate-org ORG [--config PATH]
-  github-secops-guard discover-queue [--config PATH]
+  github-secops-guard pr-check --repo OWNER/REPO --pr-json-file PATH [--runs-json-file PATH] [--config PATH]
 
-discover-queue prints a JSON work queue (stdout) from Dependabot alerts; stderr has progress.
+pr-check reads JSON from files produced by \`gh pr view --json …\` and optional \`gh run list --json …\`.
+  gh is not invoked here — run gh in your shell/skill first.
+
+Discover-queue: use packages/ghclt/scripts/run-discover-queue.mjs (injects gh) or call runDiscoverQueue from Node with { gh }.
 
 Environment:
   SECOPS_CONFIG   Default config path (default: .github-secops-agent.json relative to cwd)
 
-Exit 0 if allowed / valid; exit 1 otherwise.
+Exit 0 if allowed / valid; exit 1 otherwise (pr-check uses 0–3 for CI outcomes).
 `);
 }
 
-function loadConfig(configPath: string) {
+function loadConfig(configPath: string): SecOpsConfig {
   const raw = readFileSync(configPath, 'utf-8');
   const parsed: unknown = JSON.parse(raw);
   const v = validateSecopsConfig(parsed);
@@ -45,44 +49,30 @@ function resolveRepoRoot(configPathAbs: string): string {
   return dirname(configPathAbs);
 }
 
-function main(argv: string[]): void {
-  const args = [...argv];
-  let configPath = process.env.SECOPS_CONFIG ?? '.github-secops-agent.json';
-
-  const cfgIdx = args.indexOf('--config');
-  if (cfgIdx !== -1) {
-    const p = args[cfgIdx + 1];
-    if (!p) {
-      process.stderr.write('secops: --config requires a path\n');
-      process.exit(1);
-    }
-    configPath = p;
-    args.splice(cfgIdx, 2);
-  }
-
-  const sub = args[0];
-  if (!sub || sub === '-h' || sub === '--help') {
-    usage();
-    process.exit(sub ? 0 : 1);
-  }
-
-  const absConfig = resolve(process.cwd(), configPath);
-
-  if (sub === 'validate-config') {
-    const config = loadConfig(absConfig);
-    const repoRoot = resolveRepoRoot(absConfig);
-    const bind = validateGithubProjectBinding(config, repoRoot);
-    if (!bind.ok) {
-      for (const e of bind.errors) {
-        process.stderr.write(`secops: ${e}\n`);
-      }
-      process.exit(1);
-    }
-    process.stderr.write(`secops: config OK (${absConfig})\n`);
-    process.exit(0);
-  }
-
+function runValidateConfig(absConfig: string): void {
   const config = loadConfig(absConfig);
+  const repoRoot = resolveRepoRoot(absConfig);
+  const bind = validateGithubProjectBinding(config, repoRoot);
+  if (!bind.ok) {
+    for (const e of bind.errors) {
+      process.stderr.write(`secops: ${e}\n`);
+    }
+    process.exit(1);
+  }
+  process.stderr.write(`secops: config OK (${absConfig})\n`);
+  process.exit(0);
+}
+
+function runWithConfig(sub: string, args: string[], config: SecOpsConfig): void {
+  if (sub === 'pr-check') {
+    const flags = parsePrCheckIngestArgs(args.slice(1));
+    if (!flags) {
+      usage();
+      process.exit(1);
+    }
+    runPrCheckIngest(config, flags);
+    return;
+  }
 
   if (sub === 'validate-repo') {
     const full = args[1];
@@ -114,14 +104,40 @@ function main(argv: string[]): void {
     process.exit(0);
   }
 
-  if (sub === 'discover-queue') {
-    const out = runDiscoverQueue(config, absConfig);
-    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
-    process.exit(0);
-  }
-
   usage();
   process.exit(1);
+}
+
+function main(argv: string[]): void {
+  const args = [...argv];
+  let configPath = process.env.SECOPS_CONFIG ?? '.github-secops-agent.json';
+
+  const cfgIdx = args.indexOf('--config');
+  if (cfgIdx !== -1) {
+    const p = args[cfgIdx + 1];
+    if (!p) {
+      process.stderr.write('secops: --config requires a path\n');
+      process.exit(1);
+    }
+    configPath = p;
+    args.splice(cfgIdx, 2);
+  }
+
+  const sub = args[0];
+  if (!sub || sub === '-h' || sub === '--help') {
+    usage();
+    process.exit(sub ? 0 : 1);
+  }
+
+  const absConfig = resolve(process.cwd(), configPath);
+
+  if (sub === 'validate-config') {
+    runValidateConfig(absConfig);
+    return;
+  }
+
+  const config = loadConfig(absConfig);
+  runWithConfig(sub, args, config);
 }
 
 main(process.argv.slice(2));

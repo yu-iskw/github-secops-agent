@@ -1,5 +1,5 @@
 import type { SecOpsConfig, SecOpsOrganization } from '../config/types';
-import { ghApiDependabotAlertsOrgArgs, runGh } from '../gh/wrapper';
+import { ghApiDependabotAlertsOrgArgs } from '../gh/wrapper';
 import { validateTargetRepository } from '../policy/target-policy';
 import { isRecord } from '../utils/is-record';
 
@@ -310,10 +310,10 @@ function runPerRepoFallback(
 export function runDiscoverQueue(
   config: SecOpsConfig,
   configPathAbs: string,
-  options?: { gh?: GhRunner; log?: (msg: string) => void },
+  options: { gh: GhRunner; log?: (msg: string) => void },
 ): DiscoverQueueOutput {
-  const gh = options?.gh ?? runGh;
-  const log = options?.log ?? ((msg: string) => process.stderr.write(`${msg}\n`));
+  const { gh } = options;
+  const log = options.log ?? ((msg: string) => process.stderr.write(`${msg}\n`));
 
   const organizations: DiscoverQueueOrg[] = [];
   for (const orgEntry of config.organizations) {
