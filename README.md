@@ -1,6 +1,10 @@
-# {PROJECT_NAME}
+# github-secops-agent
 
-{PROJECT_DESCRIPTION}
+Agent workflows and shared code for GitHub security operations (SecOps).
+
+## Documentation
+
+- **Architecture decisions:** [docs/adr/README.md](docs/adr/README.md) (how to add ADRs; see [docs/adr](docs/adr) for records).
 
 ## Getting Started
 
@@ -51,4 +55,4 @@ pnpm format
 
 ## License
 
-{LICENSE}
+Apache-2.0

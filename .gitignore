@@ -147,3 +147,6 @@ TODO.md
 .claude/sessions/
 
 *.bak
+
+# REMOVE if you want to share with team members
+.github-secops-agent.json

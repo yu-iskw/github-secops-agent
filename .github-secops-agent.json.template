@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "organizations": [
+    {
+      "id": "my-org",
+      "includedRepositories": [],
+      "excludedRepositories": ["my-org/archived-*", "my-org/experimental-*"],
+      "discovery": {
+        "mode": "dependabot_alerts",
+        "minimumSeverity": "high",
+        "preferPerRepo": false
+      }
+    }
+  ],
+  "orchestration": {
+    "maxConcurrentRepos": 2,
+    "priority": ["severity", "oldest_alert"],
+    "nudgeRounds": 10,
+    "pollIntervalSeconds": 45,
+    "partialAfterMinutes": 120
+  },
+  "githubProject": {
+    "note": "Bind the batch board via gh-set-active-project -> .github/project-config.json (github-project-skills plugin)"
+  },
+  "evidence": {
+    "mode": "mvp_links_only",
+    "targetMode": "structured_plus_run_log"
+  }
+}
