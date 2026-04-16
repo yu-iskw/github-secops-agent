@@ -5,6 +5,8 @@ description: Discover target repositories for SecOps dependency remediation usin
 
 # secops-build-dependabot-queue
 
+**Workflow:** **Discover** phase — reads **`.github-secops-agent.json`** only (not `project-config.json`). See [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - Starting a **batch** remediation run.

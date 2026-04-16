@@ -67,6 +67,8 @@ flowchart TB
 - **Trade-off:** Some **`gh`** one-liners may stay in skill docs (e.g. PR discovery) instead of a dedicated skill—acceptable until repetition justifies a new skill per §5.
 - **Risk:** Drift if new skills are added without the checklist—mitigated by linking this ADR from [CLAUDE.md](../../CLAUDE.md) and product design.
 
+**Related:** [ADR 0006](0006-submit-observe-act-and-independent-project-config.md) clarifies **submit / observe / act** and **independent** `project-config.json`; sub-agents remain optional for orchestration, not mandatory for monitoring.
+
 ## Future work (optional)
 
 If **config validation** should be first-class for agents, add a minimal script (example pattern only):

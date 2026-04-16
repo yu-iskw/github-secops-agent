@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { SecOpsConfig } from '../config/types';
 import { isRecord } from '../utils/is-record';
 
 /** Shape written by github-project-skills `gh-set-active-project` (see plugin docs). */
@@ -14,7 +13,7 @@ export interface GithubProjectConfigFile {
 }
 
 /**
- * Parse `.github/project-config.json` content and return the Projects v2 node id.
+ * Parse `project-config.json` content and return the Projects v2 node id.
  */
 export function parseProjectConfigJson(raw: unknown): { projectNodeId: string } | null {
   if (!isRecord(raw)) return null;
@@ -23,29 +22,71 @@ export function parseProjectConfigJson(raw: unknown): { projectNodeId: string } 
   return { projectNodeId: id };
 }
 
+function expectOptionalString(value: unknown, path: string): string[] {
+  if (value === undefined) return [];
+  if (typeof value !== 'string') {
+    return [`${path} must be a string when set`];
+  }
+  return [];
+}
+
 /**
- * When `config.githubProject.projectNodeId` is set, require `.github/project-config.json`
- * to exist and list the same `project_id` (github-project-skills field name).
+ * Validate parsed `project-config.json` (repo root). Pure — no filesystem.
  */
-export function validateGithubProjectBinding(
-  config: SecOpsConfig,
-  repoRoot: string,
-): { ok: true } | { ok: false; errors: string[] } {
-  const expected = config.githubProject?.projectNodeId;
-  if (expected === undefined || expected === '') {
-    return { ok: true };
+export function validateProjectConfigJson(
+  parsed: unknown,
+): { ok: true; config: GithubProjectConfigFile } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  if (!isRecord(parsed)) {
+    return { ok: false, errors: ['project-config.json root must be an object'] };
   }
 
-  const path = resolve(repoRoot, '.github/project-config.json');
+  const pid = parsed.project_id;
+  if (pid === undefined || typeof pid !== 'string' || pid.length === 0) {
+    errors.push('project_id must be a non-empty string (Projects v2 node id)');
+  }
+
+  errors.push(...expectOptionalString(parsed.owner, 'owner'));
+  errors.push(...expectOptionalString(parsed.repo, 'repo'));
+  errors.push(...expectOptionalString(parsed.set_at, 'set_at'));
+
+  if (parsed.project_number !== undefined) {
+    if (
+      typeof parsed.project_number !== 'number' ||
+      !Number.isFinite(parsed.project_number) ||
+      parsed.project_number < 1
+    ) {
+      errors.push('project_number must be a positive number when set');
+    }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, config: parsed as GithubProjectConfigFile };
+}
+
+/**
+ * If `project-config.json` exists at repo root, validate it. If missing, succeed (optional file).
+ */
+export function validateProjectConfigFileAtRepoRoot(repoRoot: string):
+  | {
+      ok: true;
+      status: 'present' | 'absent';
+    }
+  | { ok: false; errors: string[] } {
+  const path = resolve(repoRoot, 'project-config.json');
+  if (!existsSync(path)) {
+    return { ok: true, status: 'absent' };
+  }
+
   let rawText: string;
   try {
     rawText = readFileSync(path, 'utf-8');
-  } catch {
+  } catch (e) {
     return {
       ok: false,
-      errors: [
-        `githubProject.projectNodeId is set but ${path} is missing; run gh-set-active-project (github-project-skills) or add the file.`,
-      ],
+      errors: [`could not read ${path}: ${e instanceof Error ? e.message : String(e)}`],
     };
   }
 
@@ -56,24 +97,9 @@ export function validateGithubProjectBinding(
     return { ok: false, errors: [`invalid JSON: ${path}`] };
   }
 
-  const fromFile = parseProjectConfigJson(parsed);
-  if (!fromFile) {
-    return {
-      ok: false,
-      errors: [
-        `${path} must contain a non-empty string project_id (Projects v2 node id from gh project list).`,
-      ],
-    };
+  const v = validateProjectConfigJson(parsed);
+  if (!v.ok) {
+    return { ok: false, errors: v.errors.map((e) => `${path}: ${e}`) };
   }
-
-  if (fromFile.projectNodeId !== expected) {
-    return {
-      ok: false,
-      errors: [
-        `GitHub Project mismatch: .github-secops-agent.json githubProject.projectNodeId is ${expected} but ${path} project_id is ${fromFile.projectNodeId}`,
-      ],
-    };
-  }
-
-  return { ok: true };
+  return { ok: true, status: 'present' };
 }

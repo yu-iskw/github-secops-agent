@@ -16,7 +16,6 @@ const validConfig = {
     },
   ],
   orchestration: {
-    maxConcurrentRepos: 2,
     priority: ['severity'],
     nudgeRounds: 10,
     pollIntervalSeconds: 45,
@@ -68,5 +67,53 @@ describe('validateSecopsConfig', () => {
     } as SecOpsConfig['organizations'][0]['discovery'];
     const r = validateSecopsConfig(ok);
     expect(r.ok).toBe(true);
+  });
+
+  it('rejects deprecated githubProject', () => {
+    const bad = { ...validConfig, githubProject: { projectNodeId: 'PVT_x' } };
+    const r = validateSecopsConfig(bad);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.some((e) => e.includes('githubProject'))).toBe(true);
+    }
+  });
+
+  it('accepts optional notifications', () => {
+    const ok = {
+      ...validConfig,
+      notifications: {
+        agentTaskEscalation: ['alice'],
+        prOrCiEscalation: ['bob'],
+      },
+    };
+    const r = validateSecopsConfig(ok);
+    expect(r.ok).toBe(true);
+  });
+
+  it('rejects invalid login in notifications', () => {
+    const bad = {
+      ...validConfig,
+      notifications: {
+        agentTaskEscalation: ['bad login'],
+        prOrCiEscalation: ['bob'],
+      },
+    };
+    const r = validateSecopsConfig(bad);
+    expect(r.ok).toBe(false);
+  });
+
+  it('rejects legacy orchestration.maxConcurrentRepos', () => {
+    const bad = {
+      ...validConfig,
+      orchestration: {
+        ...validConfig.orchestration,
+        maxConcurrentRepos: 2,
+      },
+    };
+    const r = validateSecopsConfig(bad);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.some((e) => e.includes('maxConcurrentRepos'))).toBe(true);
+    }
   });
 });

@@ -5,6 +5,8 @@ description: List or view Copilot coding agent task sessions via gh agent-task (
 
 # secops-inspect-copilot-agent-tasks
 
+**Workflow:** **Observe** phase — complements **secops-check-pr-checks**; use both for a full picture. Run [scripts/copilot-agent-tasks.sh](scripts/copilot-agent-tasks.sh) directly. See [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - **List** or **view** Copilot **agent task** sessions (often tied to a PR)—debugging, auditing, or disambiguating multiple tasks per PR.
@@ -33,6 +35,12 @@ The **`gh agent-task`** command is **preview**; flags and output may change with
 
 **Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, `gh` with `agent-task`. Optional `SECOPS_CONFIG`.
 
+### Automation notes
+
+- **`list`** output can span **many repos** — filter with `grep` for `OWNER/REPO` and the PR (see [references/gh-agent-task.md](references/gh-agent-task.md)).
+- **`view`** in non-interactive environments often needs a **session ID**, not only a PR number — see **gh-agent-task.md**.
+- Full Observe order (issue → PR → checks → agent-task): [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md).
+
 ## Constraints
 
 - **No `git push`** to the target repository from this skill.
@@ -44,4 +52,5 @@ Use alongside **secops-check-pr-checks** (checks) and **secops-assign-copilot-to
 
 ## References
 
+- [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md) — ordered Observe recipe (issue → PR checks → agent-task)
 - [gh-agent-task.md](references/gh-agent-task.md)

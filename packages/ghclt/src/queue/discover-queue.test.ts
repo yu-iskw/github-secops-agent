@@ -21,7 +21,6 @@ const baseConfig: SecOpsConfig = {
     },
   ],
   orchestration: {
-    maxConcurrentRepos: 2,
     priority: ['severity', 'oldest_alert'],
     nudgeRounds: 10,
     pollIntervalSeconds: 45,

@@ -1,7 +1,7 @@
 export type {
   SecOpsConfig,
   SecOpsEvidence,
-  SecOpsGithubProject,
+  SecOpsNotifications,
   SecOpsOrchestration,
   SecOpsOrganization,
 } from './config/types';
@@ -39,7 +39,11 @@ export {
   validateTargetRepository,
 } from './policy/target-policy';
 
-export { parseProjectConfigJson, validateGithubProjectBinding } from './policy/project-binding';
+export {
+  parseProjectConfigJson,
+  validateProjectConfigFileAtRepoRoot,
+  validateProjectConfigJson,
+} from './policy/project-binding';
 export type { GithubProjectConfigFile } from './policy/project-binding';
 
 export { runDiscoverQueue, severityRank, sortReposByPriority } from './queue/discover-queue';

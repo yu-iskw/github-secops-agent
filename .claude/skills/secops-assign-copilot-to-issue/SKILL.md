@@ -5,6 +5,8 @@ description: Assign @copilot on an existing SecOps remediation issue after polic
 
 # secops-assign-copilot-to-issue
 
+**Workflow:** **Submit** phase — run [scripts/assign-copilot-issue.sh](scripts/assign-copilot-issue.sh) after policy guard. Same script for humans and Claude; see [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - **Second step** after **secops-create-remediation-issue** when the org requires **Project link before Copilot** (create issue without assignee, sync Project, then assign).

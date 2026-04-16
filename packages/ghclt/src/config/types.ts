@@ -1,13 +1,11 @@
-/** Optional GitHub Project v2 binding; must stay in sync with `.github/project-config.json`. */
-export interface SecOpsGithubProject {
-  /** Same value as `project_id` in `.github/project-config.json` (gh-set-active-project). */
-  projectNodeId: string;
-  /** Optional metadata for operators (org login). */
-  owner?: string;
-  /** Optional: project number in the owner’s Projects list. */
-  projectNumber?: number;
-  /** Optional: human-readable title. */
-  title?: string;
+/** Mention lists for human notifications; validated by ghclt, read by shell via jq. */
+export interface SecOpsNotifications {
+  /** Logins for @mentions when Copilot agent-task side needs human attention (issue comment). */
+  agentTaskEscalation: string[];
+  /** Logins when PR or CI side needs human (PR comment). */
+  prOrCiEscalation: string[];
+  /** Optional per-org overrides keyed by organizations[].id */
+  byOrganization?: Record<string, { agentTaskEscalation?: string[]; prOrCiEscalation?: string[] }>;
 }
 
 /** Parsed `.github-secops-agent.json` (see repo root `.github-secops-agent.json.template`). */
@@ -15,8 +13,9 @@ export interface SecOpsConfig {
   version: number;
   organizations: SecOpsOrganization[];
   orchestration: SecOpsOrchestration;
-  githubProject?: SecOpsGithubProject;
   evidence: SecOpsEvidence;
+  /** Optional; when set, validated by ghclt. */
+  notifications?: SecOpsNotifications;
 }
 
 export interface SecOpsOrganization {
@@ -32,7 +31,6 @@ export interface SecOpsOrganization {
 }
 
 export interface SecOpsOrchestration {
-  maxConcurrentRepos: number;
   priority: string[];
   nudgeRounds: number;
   pollIntervalSeconds: number;

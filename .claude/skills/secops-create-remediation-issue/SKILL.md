@@ -5,6 +5,8 @@ description: Create a SecOps remediation issue on the target repo (after policy 
 
 # secops-create-remediation-issue
 
+**Workflow:** **Submit** phase — run the shell script below directly (no mega-wrapper). For Project **node id** in `gh api` flows, use repo-root **`project-config.json`** ([template](../../../project-config.json.template)), not `.github-secops-agent.json`. See [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - **Create** a tracked remediation issue when a repo is dequeued.

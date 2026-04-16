@@ -1,24 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { SecOpsConfig } from '../config/types';
-import { parseProjectConfigJson, validateGithubProjectBinding } from './project-binding';
-
-const minimalConfig = (): SecOpsConfig => ({
-  version: 1,
-  organizations: [
-    {
-      id: 'o',
-      discovery: { mode: 'dependabot_alerts', minimumSeverity: 'high' },
-    },
-  ],
-  orchestration: {
-    maxConcurrentRepos: 1,
-    priority: ['severity'],
-    nudgeRounds: 1,
-    pollIntervalSeconds: 1,
-    partialAfterMinutes: 1,
-  },
-  evidence: { mode: 'mvp_links_only', targetMode: 'structured_plus_run_log' },
-});
+import { parseProjectConfigJson, validateProjectConfigJson } from './project-binding';
 
 describe('parseProjectConfigJson', () => {
   it('reads project_id', () => {
@@ -39,20 +20,22 @@ describe('parseProjectConfigJson', () => {
   });
 });
 
-describe('validateGithubProjectBinding', () => {
-  it('skips when githubProject.projectNodeId is unset', () => {
-    const c = minimalConfig();
-    const r = validateGithubProjectBinding(c, '/tmp/absent-repo-root-xyz');
-    expect(r).toEqual({ ok: true });
+describe('validateProjectConfigJson', () => {
+  it('accepts minimal valid project config', () => {
+    const r = validateProjectConfigJson({ project_id: 'PVT_kwX' });
+    expect(r.ok).toBe(true);
   });
 
-  it('fails when projectNodeId set but file missing', () => {
-    const c = minimalConfig();
-    c.githubProject = { projectNodeId: 'PVT_a' };
-    const r = validateGithubProjectBinding(c, '/tmp/absent-repo-root-xyz');
+  it('rejects missing project_id', () => {
+    const r = validateProjectConfigJson({ owner: 'o' });
     expect(r.ok).toBe(false);
     if (!r.ok) {
-      expect(r.errors[0]).toContain('missing');
+      expect(r.errors.some((e) => e.includes('project_id'))).toBe(true);
     }
+  });
+
+  it('rejects bad project_number', () => {
+    const r = validateProjectConfigJson({ project_id: 'PVT_a', project_number: 0 });
+    expect(r.ok).toBe(false);
   });
 });

@@ -3,6 +3,9 @@ import { isRecord } from '../utils/is-record';
 
 const SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
 
+/** GitHub username / org login (simplified; no consecutive hyphens enforcement). */
+const GH_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$/;
+
 function expectString(value: unknown, path: string): string | string[] {
   if (typeof value !== 'string' || value.length === 0) {
     return [`${path} must be a non-empty string`];
@@ -83,12 +86,12 @@ function validateOrganizations(input: Record<string, unknown>): string[] {
 
 function validateOrchestration(o: Record<string, unknown>): string[] {
   const errors: string[] = [];
-  const numericFields: string[] = [
-    'maxConcurrentRepos',
-    'nudgeRounds',
-    'pollIntervalSeconds',
-    'partialAfterMinutes',
-  ];
+  if (Object.prototype.hasOwnProperty.call(o, 'maxConcurrentRepos')) {
+    errors.push(
+      'orchestration.maxConcurrentRepos was removed; control batch parallelism in your orchestrator (shell, CI, or agent fan-out), not in .github-secops-agent.json — see docs/product_design.md',
+    );
+  }
+  const numericFields: string[] = ['nudgeRounds', 'pollIntervalSeconds', 'partialAfterMinutes'];
   for (const label of numericFields) {
     const v = o[label];
     if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) {
@@ -114,30 +117,78 @@ function validateEvidence(ev: Record<string, unknown>): string[] {
   return errors;
 }
 
-function validateGithubProject(gp: Record<string, unknown>): string[] {
-  const errors: string[] = [];
-  const pid = expectString(gp.projectNodeId, 'githubProject.projectNodeId');
-  if (Array.isArray(pid)) errors.push(...pid);
-  if (gp.owner !== undefined && typeof gp.owner !== 'string') {
-    errors.push('githubProject.owner must be a string when set');
+function validateLoginArray(arr: unknown, path: string): string[] {
+  if (!Array.isArray(arr)) {
+    return [`${path} must be an array of GitHub logins`];
   }
-  if (gp.projectNumber !== undefined) {
-    if (
-      typeof gp.projectNumber !== 'number' ||
-      !Number.isFinite(gp.projectNumber) ||
-      gp.projectNumber < 1
-    ) {
-      errors.push('githubProject.projectNumber must be a positive number when set');
+  const errors: string[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const s = arr[i];
+    if (typeof s !== 'string' || !GH_LOGIN.test(s)) {
+      errors.push(`${path}[${i}] must be a valid GitHub login string`);
     }
   }
-  if (gp.title !== undefined && typeof gp.title !== 'string') {
-    errors.push('githubProject.title must be a string when set');
+  return errors;
+}
+
+function validateNotificationsByOrg(byOrg: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  for (const [orgId, ov] of Object.entries(byOrg)) {
+    if (!GH_LOGIN.test(orgId)) {
+      errors.push(`notifications.byOrganization key "${orgId}" must be a valid org id`);
+      continue;
+    }
+    if (!isRecord(ov)) {
+      errors.push(`notifications.byOrganization.${orgId} must be an object`);
+      continue;
+    }
+    if (ov.agentTaskEscalation !== undefined) {
+      errors.push(
+        ...validateLoginArray(
+          ov.agentTaskEscalation,
+          `notifications.byOrganization.${orgId}.agentTaskEscalation`,
+        ),
+      );
+    }
+    if (ov.prOrCiEscalation !== undefined) {
+      errors.push(
+        ...validateLoginArray(
+          ov.prOrCiEscalation,
+          `notifications.byOrganization.${orgId}.prOrCiEscalation`,
+        ),
+      );
+    }
   }
+  return errors;
+}
+
+function validateNotifications(n: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  if (n.agentTaskEscalation === undefined) {
+    errors.push('notifications.agentTaskEscalation is required when notifications is set');
+  } else {
+    errors.push(...validateLoginArray(n.agentTaskEscalation, 'notifications.agentTaskEscalation'));
+  }
+  if (n.prOrCiEscalation === undefined) {
+    errors.push('notifications.prOrCiEscalation is required when notifications is set');
+  } else {
+    errors.push(...validateLoginArray(n.prOrCiEscalation, 'notifications.prOrCiEscalation'));
+  }
+
+  if (n.byOrganization === undefined) {
+    return errors;
+  }
+  if (!isRecord(n.byOrganization)) {
+    errors.push('notifications.byOrganization must be an object when set');
+    return errors;
+  }
+  errors.push(...validateNotificationsByOrg(n.byOrganization));
   return errors;
 }
 
 /**
  * Validate config shape for the SecOps orchestrator. Pure — no `gh` calls.
+ * `githubProject` is rejected — use repo-root `project-config.json` for Project binding.
  */
 export function validateSecopsConfig(
   input: unknown,
@@ -148,6 +199,12 @@ export function validateSecopsConfig(
   }
   if (input.version !== 1) {
     errors.push('version must be 1');
+  }
+
+  if (input.githubProject !== undefined) {
+    errors.push(
+      'githubProject is no longer supported in .github-secops-agent.json; use repo-root project-config.json for GitHub Project binding (see project-config.json.template)',
+    );
   }
 
   errors.push(...validateOrganizations(input));
@@ -164,11 +221,11 @@ export function validateSecopsConfig(
     errors.push(...validateEvidence(input.evidence));
   }
 
-  if (input.githubProject !== undefined) {
-    if (!isRecord(input.githubProject)) {
-      errors.push('githubProject must be an object when set');
+  if (input.notifications !== undefined) {
+    if (!isRecord(input.notifications)) {
+      errors.push('notifications must be an object when set');
     } else {
-      errors.push(...validateGithubProject(input.githubProject));
+      errors.push(...validateNotifications(input.notifications));
     }
   }
 

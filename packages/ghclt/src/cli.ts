@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { validateSecopsConfig } from './config/validate';
 import type { SecOpsConfig } from './config/types';
-import { validateGithubProjectBinding } from './policy/project-binding';
+import { validateProjectConfigFileAtRepoRoot } from './policy/project-binding';
 import { validateOrganizationId, validateTargetRepository } from './policy/target-policy';
 import { parsePrCheckIngestArgs, runPrCheckIngest } from './pr-check/ingest';
 
@@ -12,7 +12,7 @@ function usage(): void {
 
 Usage:
   github-secops-guard validate-config [--config PATH]
-    (also checks .github/project-config.json vs githubProject when projectNodeId is set)
+    validates .github-secops-agent.json and repo-root project-config.json when present
   github-secops-guard validate-repo OWNER/REPO [--config PATH]
   github-secops-guard validate-org ORG [--config PATH]
   github-secops-guard pr-check --repo OWNER/REPO --pr-json-file PATH [--runs-json-file PATH] [--config PATH]
@@ -40,7 +40,7 @@ function loadConfig(configPath: string): SecOpsConfig {
   return v.config;
 }
 
-/** Directory containing `.github/project-config.json` (parent of `.github-secops-agent.json` when at repo root). */
+/** Repo root: parent of `.github-secops-agent.json` when config lives at repo root. */
 function resolveRepoRoot(configPathAbs: string): string {
   const ws = process.env.GITHUB_WORKSPACE;
   if (typeof ws === 'string' && ws.length > 0) {
@@ -50,14 +50,19 @@ function resolveRepoRoot(configPathAbs: string): string {
 }
 
 function runValidateConfig(absConfig: string): void {
-  const config = loadConfig(absConfig);
+  loadConfig(absConfig);
   const repoRoot = resolveRepoRoot(absConfig);
-  const bind = validateGithubProjectBinding(config, repoRoot);
-  if (!bind.ok) {
-    for (const e of bind.errors) {
+  const proj = validateProjectConfigFileAtRepoRoot(repoRoot);
+  if (!proj.ok) {
+    for (const e of proj.errors) {
       process.stderr.write(`secops: ${e}\n`);
     }
     process.exit(1);
+  }
+  if (proj.status === 'absent') {
+    process.stderr.write(
+      `secops: note: project-config.json not found at repo root (optional; add for GitHub Project v2 binding)\n`,
+    );
   }
   process.stderr.write(`secops: config OK (${absConfig})\n`);
   process.exit(0);

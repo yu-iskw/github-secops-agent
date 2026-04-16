@@ -21,7 +21,6 @@ const baseOrg = (overrides?: Partial<SecOpsConfig['organizations'][0]>): SecOpsC
     },
   ],
   orchestration: {
-    maxConcurrentRepos: 2,
     priority: ['severity'],
     nudgeRounds: 10,
     pollIntervalSeconds: 45,

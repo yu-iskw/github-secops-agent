@@ -5,6 +5,8 @@ description: Post remediation closeout / evidence on the SecOps issue per eviden
 
 # secops-post-remediation-evidence
 
+**Workflow:** **Act** / closeout — post evidence via **`gh`** per **`evidence`** in `.github-secops-agent.json`. See [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - When a repo thread reaches **green**, **partial**, or **blocked**.

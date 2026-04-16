@@ -1,6 +1,6 @@
 ---
 name: secops-check-pr-checks
-description: One-shot PR status check with gh—structured JSON outcome and exit codes; classify green vs failing vs pending vs blocked. Read-only on the repo. Does not loop; orchestrating sub-agents sleep and re-invoke. No issue comments—use secops-post-ci-nudge-comment to nudge.
+description: One-shot PR status check with gh—structured JSON outcome and exit codes; classify green vs failing vs pending vs blocked. Read-only on the repo. Does not loop; re-invoke on a schedule (human, Claude, or optional sub-agent). No issue comments—use secops-post-ci-nudge-comment to nudge.
 ---
 
 # secops-check-pr-checks
@@ -9,7 +9,7 @@ description: One-shot PR status check with gh—structured JSON outcome and exit
 
 - After **secops-create-remediation-issue** (issue exists) and Copilot may have opened a PR—**snapshot** required checks / merge state **at invocation time**.
 - **Debugging** or **one-off** status when you already know `owner/repo` and PR number.
-- As the **leaf step** inside a **sub-agent or orchestrator loop** (see **Orchestration** below)—this skill does **not** sleep or retry by itself.
+- As the **leaf step** when **observing** PR status—re-run this skill when you need a fresh snapshot; it does **not** sleep or retry by itself (see [docs/product_design.md](../../../docs/product_design.md)).
 - **Use secops-post-ci-nudge-comment** when you need to post a **comment** on the issue—not for status classification.
 
 ## Inputs
@@ -29,6 +29,8 @@ Or from branch name Copilot used:
 ```bash
 gh pr view BRANCH --repo OWNER/REPO --json url,number,statusCheckRollup
 ```
+
+**Issue-linked PR (GraphQL):** when the issue title is generic, use timeline **ConnectedEvent** or the helper **[scripts/issue-linked-pr.sh](scripts/issue-linked-pr.sh)** (`--repo OWNER/REPO --issue N`). Full ordered steps: [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md).
 
 ## Shell script (primary)
 
@@ -60,6 +62,8 @@ pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
 ```
 
 **Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, **`gh`**. Optional `SECOPS_CONFIG`. Policy guard prevents checks against out-of-policy repos.
+
+**Draft, review, and `blocked_manual_ci`:** a PR can show **all rollup checks successful** while **`mergeStateStatus` is `BLOCKED`** and **`outcome` is `blocked_manual_ci`** (exit **3**) — for example **`isDraft: true`**, **`reviewDecision: REVIEW_REQUIRED`**, or branch rules. That is **not** **`green`** in classifier terms (`mergeStateStatus` **CLEAN**). See [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md).
 
 ### When the rollup is empty
 
@@ -111,4 +115,5 @@ Pass **PR URL**, **JSON line from check-repo-ci.sh**, and orchestration **outcom
 
 ## References
 
+- [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md) — ordered Observe recipe (issue → PR → checks → agent-task)
 - [gh-agent-task.md](../secops-inspect-copilot-agent-tasks/references/gh-agent-task.md) — optional `gh agent-task` (preview), distinct from PR checks; skill **secops-inspect-copilot-agent-tasks**

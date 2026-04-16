@@ -9,6 +9,7 @@ describe('public API barrel', () => {
     expect(typeof api.validateTargetRepository).toBe('function');
     expect(typeof api.classifyFromPrView).toBe('function');
     expect(typeof api.composePrCheckJson).toBe('function');
-    expect(typeof api.validateGithubProjectBinding).toBe('function');
+    expect(typeof api.validateProjectConfigFileAtRepoRoot).toBe('function');
+    expect(typeof api.validateProjectConfigJson).toBe('function');
   });
 });

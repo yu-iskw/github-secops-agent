@@ -4,13 +4,15 @@ This directory holds [Architecture Decision Records](https://adr.github.io/) for
 
 ## Index
 
-| ADR                                                                  | Title                                                                                                         |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [0001](0001-record-architecture-decisions.md)                        | Record architecture decisions (meta: why ADRs).                                                               |
-| [0002](0002-secops-policy-guardrails-and-skill-shell-scripts.md)     | SecOps policy guardrails, `github-secops-guard`, self-contained skill shell scripts.                          |
-| [0003](0003-secops-orchestration-with-claude-code-copilot-and-gh.md) | SecOps orchestration: Claude Code skills/sub-agents, Copilot-only branch author, `gh`, github-project-skills. |
-| [0004](0004-issue-project-copilot-workflow-order-and-kanban.md)      | Issue → Project → Copilot order, `maxConcurrentRepos`, Kanban automations vs fallback sync.                   |
-| [0005](0005-secops-granular-skills-vs-subagents.md)                  | SecOps granular skills vs sub-agents: taxonomy, when to add a skill, deferred options.                        |
+| ADR                                                                  | Title                                                                                                                 |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [0001](0001-record-architecture-decisions.md)                        | Record architecture decisions (meta: why ADRs).                                                                       |
+| [0002](0002-secops-policy-guardrails-and-skill-shell-scripts.md)     | SecOps policy guardrails, `github-secops-guard`, self-contained skill shell scripts.                                  |
+| [0003](0003-secops-orchestration-with-claude-code-copilot-and-gh.md) | SecOps orchestration: Claude Code skills/sub-agents, Copilot-only branch author, `gh`, github-project-skills.         |
+| [0004](0004-issue-project-copilot-workflow-order-and-kanban.md)      | Issue → Project → Copilot order, orchestrator vs Copilot queue, Kanban automations vs fallback sync.                  |
+| [0005](0005-secops-granular-skills-vs-subagents.md)                  | SecOps granular skills vs sub-agents: taxonomy, when to add a skill, deferred options.                                |
+| [0006](0006-submit-observe-act-and-independent-project-config.md)    | Submit / observe / act; repo-root `project-config.json` independent of `.github-secops-agent.json`; ghclt validation. |
+| [0007](0007-orchestrator-concurrency-outside-policy.md)              | Orchestrator concurrency outside SecOps policy; removal of `maxConcurrentRepos` from schema.                          |
 
 The ADR directory is configured via [`.adr-dir`](../../.adr-dir) at the repo root (for `adr-tools`).
 

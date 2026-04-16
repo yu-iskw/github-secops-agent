@@ -13,7 +13,7 @@ Work must be traceable from intent (issue) through planning (project) to impleme
 ## Decision
 
 1. **Canonical order:** **Create issue → link to Project → Copilot task** (run a second Copilot pass only when required). Do not rely on an ad hoc order that skips the issue or project link when those are part of the team’s tracking contract.
-2. **`maxConcurrentRepos`:** This limit applies to **orchestrator repository threads** (e.g. how many repos the batch orchestrator works on in parallel). It does **not** cap or define GitHub Copilot’s internal job queue; do not conflate the two.
+2. **Orchestrator concurrency:** Batch parallelism (how many repos to drive at once) lives in the **orchestrator** (shell, CI, agent fan-out), **not** in `.github-secops-agent.json`. GitHub Copilot’s internal queue is separate—see [ADR 0007](0007-orchestrator-concurrency-outside-policy.md).
 3. **Kanban / status updates:** Prefer **GitHub Project automations** to move items through columns when available. If automations are insufficient, use a documented fallback such as the **`secops-project-board-sync`** sub-agent (Task tool; same plugin skills as runbooks), keeping behavior explicit in runbooks.
 4. **No unverified assumptions:** Do **not** assume Copilot updates Project fields or moves cards without verification; confirm in the target org/project setup or document manual steps.
 

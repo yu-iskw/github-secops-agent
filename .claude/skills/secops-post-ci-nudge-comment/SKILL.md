@@ -1,14 +1,16 @@
 ---
 name: secops-post-ci-nudge-comment
-description: Post a nudge comment on the SecOps issue when PR checks fail or stall—continuation policy, round caps, validate-repo before gh issue comment. Does not run PR checks; use secops-check-pr-checks for one-shot status (orchestrators loop).
+description: Post a nudge comment on the SecOps issue when PR checks fail or stall—continuation policy, round caps, validate-repo before gh issue comment. Does not run PR checks; use secops-check-pr-checks for one-shot status (re-invoke when needed).
 ---
 
 # secops-post-ci-nudge-comment
 
+**Workflow:** **Act** phase — run [scripts/nudge-copilot-ci.sh](scripts/nudge-copilot-ci.sh) after review; @mention lists can live under **`.github-secops-agent.json`** → **`notifications`** (validated by ghclt). See [docs/product_design.md](../../../docs/product_design.md).
+
 ## When to use
 
 - After **secops-check-pr-checks** reports `failing` (or orchestration chooses to nudge on long `pending`) while the nudge round is still below **orchestration.nudgeRounds**.
-- **Not** for status classification—use **secops-check-pr-checks** + `check-repo-ci.sh` for JSON outcome and exit codes (invoke repeatedly from a sub-agent if needed).
+- **Not** for status classification—use **secops-check-pr-checks** + `check-repo-ci.sh` for JSON outcome and exit codes (re-invoke when you need a fresh snapshot).
 
 ## Inputs
 
