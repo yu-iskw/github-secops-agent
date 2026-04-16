@@ -1,118 +1,82 @@
-# TypeScript Monorepo - Claude Code Memory
+# github-secops-agent — Claude Code
 
-## Project Overview
+This repository defines **SecOps dependency remediation orchestration**: **granular skills**, optional **sub-agents**, and **`gh`-first** GitHub automation. **Only GitHub Copilot** writes commits on target branches; orchestration uses **issues, PRs, comments, and GitHub Projects**.
 
-This is a production-ready TypeScript monorepo template using modern tooling:
+## Documentation
 
-- **Package Manager**: pnpm (with workspace support)
-- **Runtime**: Node.js (see `.node-version` for current version)
-- **Build System**: tsc / pnpm
-- **Linting/Formatting**: Trunk (manages ESLint, Prettier, and more)
-- **Testing**: Vitest
-- **CI/CD**: GitHub Actions
+- **Product design:** [docs/product_design.md](docs/product_design.md) — submit / observe / act, **no monolithic facade**; role-aligned skill scripts + `gh`.
+- **Config (two independent files at repo root):**
+  - Copy [.github-secops-agent.json.template](.github-secops-agent.json.template) to **`.github-secops-agent.json`** (SecOps policy; optional **`notifications`** for @mentions).
+  - Copy [project-config.json.template](project-config.json.template) to **`project-config.json`** when using a GitHub Project (v2) — **`project_id`** plus **`project_title`** (exact title for `gh issue create --project`); do not duplicate Project ids in the SecOps file.
+- **Architecture decisions (ADRs):** [docs/adr/README.md](docs/adr/README.md) — including [ADR 0006](docs/adr/0006-submit-observe-act-and-independent-project-config.md).
 
-## Quick Commands
+## Claude Code documentation
 
-```bash
-pnpm install    # Install all dependencies (includes Trunk launcher; use pnpm lint/format below)
-pnpm build      # Build all packages
-pnpm test       # Run all tests via Vitest
-pnpm lint       # Run all linters via Trunk
-pnpm format     # Auto-format code via Trunk
-pnpm clean      # Clean build artifacts
+- [Skills](https://code.claude.com/docs/en/skills)
+- [Sub-agents](https://code.claude.com/docs/en/sub-agents)
+- [Agent teams](https://code.claude.com/docs/en/agent-teams)
+
+## Plugins: github-project-skills
+
+This project uses **[github-project-skills](https://github.com/yu-iskw/github-project-skills)** (see [.claude/settings.json](.claude/settings.json) `enabledPlugins`).
+
+Install (from Claude Code):
+
+```text
+/plugin marketplace add yu-iskw/github-project-skills
+/plugin install github-project-skills@github-project-skills
+/reload-plugins
 ```
 
-## Code Style
+### One-time: active GitHub Project
 
-- Use TypeScript for all code
-- Follow project ESLint/Prettier configuration (managed via Trunk)
-- Use functional programming patterns where appropriate
-- Use `PascalCase` for classes/interfaces, `camelCase` for functions/variables
-- Use `kebab-case` for file names (e.g., `user-service.ts`)
+Run the **`gh-set-active-project`** skill so the batch GitHub Project (v2) is recorded. Maintain repo-root **`project-config.json`** (see [project-config.json.template](project-config.json.template)) — if the plugin writes under `.github/`, **copy** the file to the repo root so tooling has one path. Commit **`project-config.json`** so teammates share context. Changes should be reviewed via **CODEOWNERS** (see below).
 
-## Testing
+Other plugin skills used with SecOps flows: **`gh-issue-management`**, **`gh-project-management`**, **`gh-verifying-context`**.
 
-- Write tests in `tests/` or alongside source files as `*.test.ts`
-- Use Vitest for unit and integration tests
-- Aim for high test coverage on core logic
-- Run `pnpm test` before committing
+## SecOps skills and sub-agents (this repo)
 
-## Git Workflow
+**Taxonomy:** Granular **skills** are single-outcome verbs (policy guard + one `gh`/CLI surface); **sub-agents** are optional for batch orchestration. When to add a new SecOps skill: see [ADR 0005](docs/adr/0005-secops-granular-skills-vs-subagents.md). **Observe/act** uses the same scripts as humans—invoke skills and `gh` on your schedule ([ADR 0006](docs/adr/0006-submit-observe-act-and-independent-project-config.md)).
 
-- Create feature branches from `main`
-- Run `pnpm lint && pnpm test` before commits
-- Commit messages: `type(scope): description` (e.g., `feat(ui): add new button component`)
-- Types: feat, fix, docs, style, refactor, test, chore
-- Record changes using the `manage-changelog` skill when `changie` is available
+| Skill                                                                                              | Purpose                                                                                            |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [secops-discover-remediation-targets](.claude/skills/secops-discover-remediation-targets/SKILL.md) | Discover remediation targets: `gh` + policy; Dependabot, staleness, activity (no ghclt batch JSON) |
+| [secops-create-remediation-issue](.claude/skills/secops-create-remediation-issue/SKILL.md)         | Create remediation issue + task body                                                               |
+| [secops-assign-copilot-to-issue](.claude/skills/secops-assign-copilot-to-issue/SKILL.md)           | Assign @copilot on existing issue                                                                  |
+| [secops-check-pr-checks](.claude/skills/secops-check-pr-checks/SKILL.md)                           | One-shot PR checks JSON + exit codes (read-only)                                                   |
+| [secops-inspect-copilot-agent-tasks](.claude/skills/secops-inspect-copilot-agent-tasks/SKILL.md)   | List/view Copilot agent tasks (preview `gh`)                                                       |
+| [secops-post-ci-nudge-comment](.claude/skills/secops-post-ci-nudge-comment/SKILL.md)               | Nudge Copilot on failing CI (issue comment)                                                        |
+| [secops-post-remediation-evidence](.claude/skills/secops-post-remediation-evidence/SKILL.md)       | Post remediation evidence on issue                                                                 |
+| [postmortem](.claude/skills/postmortem/SKILL.md)                                                   | End-of-session retrospective in chat (ranked improvements; no repo edits unless asked)             |
 
-## Architecture
+| Sub-agent                     | Purpose                                    |
+| ----------------------------- | ------------------------------------------ |
+| **secops-batch-orchestrator** | Batch queue + concurrency (optional)       |
+| **secops-repo-runner**        | Single-repo automation (optional)          |
+| **secops-project-board-sync** | Sync GitHub Project fields (plugin skills) |
 
-- Source code in `packages/*` or `src/` (depending on package structure)
-- Development scripts and shared config in root
-- CI/CD workflows in `.github/workflows/`
-- Claude Code configuration in `.claude/`
-- Document significant design decisions as Architecture Decision Records (ADRs) in `docs/adr`; use the `manage-adr` skill when `adr` is available
+Sub-agent files under `.claude/agents/` are not in the repo yet; they will be added in a later, organized pass.
 
-## Common Gotchas
+## Policy guard CLI (`github-secops-guard`)
 
-- Always use `pnpm` instead of `npm` or `yarn`
-- Trunk manages tool versions hermetically - don't install linters globally
-- The `pnpm-lock.yaml` file is committed for reproducibility - don't gitignore it
-- After `pnpm install`, the Trunk launcher is available via `node_modules/.bin`; the CLI version is pinned in `.trunk/trunk.yaml` (`cli.version`). Run `pnpm exec trunk install` if hermetic linters or formatters are missing
+Build once: `pnpm --filter @github-secops-agent/ghclt build`.
 
-## Parallel Task Execution
+**MVP — run these first:**
 
-For large tasks that can benefit from concurrent work:
+- `node packages/ghclt/dist/cli.js --help` — lists subcommands (`config-schema`, `validate-config`, `validate-repo`, `validate-org`, `pr-check`); implemented with **Commander** (`--config` is accepted on the root command and repeated on each subcommand that loads policy).
+- `node packages/ghclt/dist/cli.js config-schema` — prints JSON Schema (draft-07) for `.github-secops-agent.json` to stdout (contract-tested; use as agent context for config shape).
+- `node packages/ghclt/dist/cli.js validate-config --config .github-secops-agent.json` — validates SecOps JSON and **`project-config.json`** when present at repo root (no cross-file id matching).
+- `node packages/ghclt/dist/cli.js validate-repo OWNER/REPO --config .github-secops-agent.json` (or `github-secops-guard --config PATH validate-repo OWNER/REPO`)
+- `node packages/ghclt/dist/cli.js validate-org ORG --config .github-secops-agent.json`
 
-```bash
-/parallel-executor Add comprehensive logging to all modules
-```
+SecOps skill scripts under [`.claude/skills/`](.claude/skills/) call this **before** `gh` so issues are not opened against unexpected orgs/repos. See [.github-secops-agent.json.template](.github-secops-agent.json.template) **Canonical guard stanza**.
 
-This decomposes tasks into independent subtasks with file ownership, executes them in parallel, and verifies results.
+Remediation target **discovery** (repos, alerts, optional metadata filters) is **manual `gh api` + jq** per [secops-discover-remediation-targets](.claude/skills/secops-discover-remediation-targets/SKILL.md)—there is no batch JSON emitter in **`packages/ghclt`**.
 
-## Available Agents
+## Optional helpers
 
-| Agent                    | Purpose                              |
-| ------------------------ | ------------------------------------ |
-| `verifier`               | Run build → lint → test cycle        |
-| `code-reviewer`          | Review code for quality and security |
-| `parallel-executor`      | Orchestrate parallel task execution  |
-| `parallel-tasks-planner` | Plan task decomposition              |
-| `task-worker`            | Execute isolated subtasks            |
+[`packages/ghclt`](packages/ghclt) provides config validation, target policy checks, `github-secops-guard`, PR/check **parsers**, **`gh` argv helpers** for Dependabot alerts, and **`severityRank`** for shared severity ordering. **`ghclt` does not spawn `gh`** for guard or pr-check; invoke `gh` from skills or your shell.
 
-## Available Skills
+## CODEOWNERS
 
-| Skill                          | Purpose                                                                                        |
-| :----------------------------- | :--------------------------------------------------------------------------------------------- |
-| `build-and-fix`                | Build the project and automatically fix build errors, compilation failures, or type mismatches |
-| `clean-project`                | Perform a "hard reset" of the development environment (clean node_modules, lockfiles, etc.)    |
-| `fix-issue`                    | Fix a GitHub issue end-to-end (view, branch, fix, test, PR)                                    |
-| `improve-claude-config`        | Self-improvement skill for evolving Claude Code configuration                                  |
-| `initialize-project`           | Initialize a new project from the template (rename packages, update metadata)                  |
-| `lint-and-fix`                 | Run linters and fix violations, formatting errors, or style mismatches using Trunk             |
-| `manage-adr`                   | Manage Architecture Decision Records (init, create, list, link ADRs in `docs/adr`)             |
-| `manage-changelog`             | Manage changelogs with Changie (init, add fragments, batch releases, merge into CHANGELOG.md)  |
-| `node-upgrade`                 | Safely upgrade Node.js dependencies in pnpm workspaces                                         |
-| `security-vulnerability-audit` | Audit security vulnerabilities using Trunk (Trivy and OSV-scanner)                             |
-| `setup-dev-env`                | Set up the development environment (Node.js, pnpm, Trunk)                                      |
-| `test-and-fix`                 | Run unit tests and automatically fix failures, regression bugs, or test mismatches             |
-| `problem-solving`              | Systematic issue analysis and report generation (global skill)                                 |
-
-## Configuration Self-Improvement
-
-This project supports Claude Code self-improvement. When you notice repeated mistakes, recurring explanations, or opportunities for automation:
-
-1. **Analyze Pattern**: Identify if it's a rule (guidance), a hook (mandatory action), a skill (workflow), or an agent (specialized task).
-2. **Implement Improvement**:
-   - **Rules**: Add to `CLAUDE.md` or `.cursor/rules/` for guidance requiring judgment.
-   - **Hooks**: Use `PreToolUse` or `PostToolUse` in `.claude/settings.json` for deterministic, mandatory checks.
-   - **Skills**: Create new entries in `.claude/skills/` for reusable complex workflows.
-   - **Agents**: Define new agents in `.claude/agents/` for specialized context isolation.
-3. **Use Subagents**: For configuration research or verification, use subagents to isolate context and prevent contamination of the main session.
-4. **Be Specific & Minimal**: Only add rules or skills that provide clear, non-obvious value.
-
-Use the `/improve-claude-config` skill to orchestrate these changes.
-
-## Recent Learnings
-
-- [2026-02-05]: Initial setup of the comprehensive skills reference and self-improvement guidelines.
+[.github/CODEOWNERS](.github/CODEOWNERS) requires review for **`project-config.json`** (repo root) and **`.github-secops-agent.json`** so project binding and SecOps policy changes are intentional.

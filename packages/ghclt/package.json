@@ -1,0 +1,22 @@
+{
+  "name": "@github-secops-agent/ghclt",
+  "version": "1.0.0",
+  "description": "GitHub CLI tool for the GitHub Security Operations Agent.",
+  "keywords": [],
+  "license": "Apache-2.0",
+  "author": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "github-secops-guard": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-schema.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}

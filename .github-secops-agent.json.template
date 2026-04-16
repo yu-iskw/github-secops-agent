@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "organizations": [
+    {
+      "id": "my-org",
+      "excludedRepositories": ["my-org/archived-*", "my-org/experimental-*"],
+      "discovery": {
+        "mode": "dependabot_alerts",
+        "minimumSeverity": "high",
+        "preferPerRepo": false
+      }
+    }
+  ],
+  "orchestration": {
+    "priority": ["severity", "oldest_alert"],
+    "nudgeRounds": 10
+  }
+}
