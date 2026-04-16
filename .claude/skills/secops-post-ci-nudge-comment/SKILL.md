@@ -33,7 +33,7 @@ description: Post a nudge comment on the SecOps issue when PR checks fail or sta
 Compose `/tmp/nudge.md` using **[references/copilot_continuation.md](references/copilot_continuation.md)** and concrete check names from `gh pr checks` or the JSON line from **secops-check-pr-checks**.
 
 - **Manual CI / blocked:** If **secops-check-pr-checks** exit **3** / `blocked_manual_ci`, do not nudge in a loop—label `blocked:manual-ci`, **notify the user** (see continuation reference).
-- **Partial / timeout:** If elapsed time exceeds **orchestration.partialAfterMinutes** without green, mark **partial** for Project + evidence; nudges stop when rounds or time limits apply.
+- **Partial / timeout:** If elapsed time exceeds **~60 minutes** without green (operator convention; not in `.github-secops-agent.json`), mark **partial** for Project + evidence; nudges stop when **orchestration.nudgeRounds** or time limits apply.
 
 ## Constraints
 

@@ -10,7 +10,7 @@ This document describes the **GitHub SecOps agent** approach for **org-scale vul
 | **Integration**       | **GitHub-native** only: [`gh`](https://cli.github.com/), REST/GraphQL via `gh api`. No undocumented Copilot UI automation.                                                                                          |
 | **Branch authorship** | **Copilot only** on branches. Claude Code and these skills **do not** `git push` to target repos.                                                                                                                   |
 | **Done criterion**    | **Required checks** on the remediation PR are **green**, within **nudge rounds** and policy; otherwise **partial** with **explicit user-visible** notices.                                                          |
-| **Discovery**         | **Allowlist + exclude list** intersected with repos that have **security findings** (e.g. Dependabot alerts via `gh api`).                                                                                          |
+| **Discovery**         | **Org scope + exclude patterns** (and session filters) intersected with repos that have **security findings** (e.g. Dependabot alerts via `gh api`). No repo allowlist in `.github-secops-agent.json`.              |
 | **Execution**         | **Priority queue** in policy (`orchestration.priority`); **batch parallelism** is an **orchestrator** concern (shell, CI, agents)—**not** in `.github-secops-agent.json`. Copilot scheduling stays **GitHub-side**. |
 | **Visibility**        | **GitHub Project (v2)** as the human dashboard; progress and **next action** live in **Project custom fields** and are cross-checked with **`gh`** (issues, PRs, checks, `gh agent-task`).                          |
 | **Evidence**          | Target: **structured issue/PR summary + orchestrator run log**; MVP may use **links-only** with a documented audit gap.                                                                                             |
@@ -19,10 +19,10 @@ This document describes the **GitHub SecOps agent** approach for **org-scale vul
 
 SecOps policy and GitHub Project binding are **separate** files with **no duplicated fields** (no Project id inside `.github-secops-agent.json`).
 
-| File                                                                               | Role                                                                                                                                                                 | Template                                                                      |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **[`.github-secops-agent.json`](../.github-secops-agent.json.template)**           | **SecOps policy:** `version`, `organizations`, `orchestration`, `evidence`, optional **`notifications`** (GitHub logins for @mentions on **issue** vs **PR** paths). | [`.github-secops-agent.json.template`](../.github-secops-agent.json.template) |
-| **[`project-config.json`](../project-config.json.template)** (repository **root**) | **GitHub Project (v2) binding only:** `project_id`, optional `owner`, `repo`, `project_number`, `set_at`.                                                            | [`project-config.json.template`](../project-config.json.template)             |
+| File                                                                               | Role                                                                                                                                                                                                                                     | Template                                                                      |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **[`.github-secops-agent.json`](../.github-secops-agent.json.template)**           | **SecOps policy:** `version`, `organizations`, `orchestration`, optional **`notifications`** (GitHub logins for @mentions on **issue** vs **PR** paths). Evidence format and observe cadence are **skill conventions**, not JSON fields. | [`.github-secops-agent.json.template`](../.github-secops-agent.json.template) |
+| **[`project-config.json`](../project-config.json.template)** (repository **root**) | **GitHub Project (v2) binding only:** `project_id`, optional **`project_title`** (CLI board title for `gh issue create --project`), optional `owner`, `repo`, `project_number`, `set_at`.                                                | [`project-config.json.template`](../project-config.json.template)             |
 
 - **`packages/ghclt`** validates each JSON **independently** (`github-secops-guard validate-config`). It does **not** call `gh`; shell skills and operators run `gh`.
 - If **`gh-set-active-project`** (github-project-skills) still writes under `.github/`, **copy or symlink** the result to repo-root **`project-config.json`** so tooling has a single path (see template).
@@ -43,7 +43,7 @@ flowchart LR
 
 1. Prefer **`gh`** for everything it supports: `gh api` (`--paginate`, `-f`), `gh pr view`, `gh pr checks`, `gh issue`, `gh agent-task`, etc.
 2. Use **`gh api`** for endpoints without a dedicated subcommand (e.g. org Dependabot alerts). Avoid `curl` + raw PATs when `gh` can attach credentials.
-3. **`packages/ghclt`** provides **validation** (`.github-secops-agent.json`, `project-config.json` shape) and **PR/check classification** from **JSON files produced by shell** (`gh pr view --json …` → `github-secops-guard pr-check`). **`ghclt` does not spawn `gh`** for those paths. Queue discovery may inject a `gh` runner (see package docs).
+3. **`packages/ghclt`** provides **validation** (`.github-secops-agent.json`, `project-config.json` shape) and **PR/check classification** from **JSON files produced by shell** (`gh pr view --json …` → `github-secops-guard pr-check`). **`ghclt` does not spawn `gh`** for those paths. **Discovery** of remediation targets is **manual** (`gh api` + policy + optional `jq`); see [secops-discover-remediation-targets](../.claude/skills/secops-discover-remediation-targets/SKILL.md)—Dependabot alerts, optional repo staleness/activity filters, intersections; there is **no** built-in batch JSON queue in `ghclt`.
 
 ## Claude Code primitives
 
@@ -140,7 +140,7 @@ Traceability stays anchored on the **GitHub Project** and **issues**:
 
 ### Concurrency: orchestrator vs Copilot queue
 
-- **Policy** holds **`orchestration.priority`** (how to sort the dependabot discovery queue) and time/round limits for observe/act (`nudgeRounds`, `pollIntervalSeconds`, `partialAfterMinutes`). It does **not** include a max-parallelism field; **`ghclt`** validates policy and does not run a repo-thread pool.
+- **Policy** holds **`orchestration.priority`** (how to sort the dependabot discovery queue) and **`orchestration.nudgeRounds`** for act loops. **Poll interval** and **partial timeout** are **operator / skill conventions** (not in JSON). It does **not** include a max-parallelism field; **`ghclt`** validates policy and does not run a repo-thread pool.
 - **Orchestrator** (operator, Claude, sub-agent, or CI) decides how many repos to touch in parallel—e.g. **`xargs -P`**, a job matrix, or **`SECOPS_PARALLEL`** in a wrapper script. That throttles **local** `gh` / API usage and attention; it is separate from GitHub’s **Copilot agent queue**, which schedules work **server-side**.
 
 Example (parallel cap in shell only; not part of the JSON policy file):
@@ -165,15 +165,15 @@ Formal boundaries: [ADR 0005: SecOps granular skills vs sub-agents](adr/0005-sec
 
 ### Skills (one `SKILL.md` per concern)
 
-| Skill ID                               | Responsibility                                                                                               |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **secops-build-dependabot-queue**      | Load `.github-secops-agent.json`; intersect allow/exclude with repos having alerts; emit **priority queue**. |
-| **secops-create-remediation-issue**    | Create **issue** with gist prompt + optional assign/project when allowed.                                    |
-| **secops-assign-copilot-to-issue**     | Assign **@copilot** on an existing issue.                                                                    |
-| **secops-check-pr-checks**             | Find PR; **one-shot** **required checks**; JSON + exit codes (read-only).                                    |
-| **secops-inspect-copilot-agent-tasks** | List/view **Copilot agent task** sessions via `gh agent-task` (preview).                                     |
-| **secops-post-ci-nudge-comment**       | Post **nudge** on issue from continuation policy.                                                            |
-| **secops-post-remediation-evidence**   | Append **evidence** (MVP: links; target: summary + run log).                                                 |
+| Skill ID                                | Responsibility                                                                                                                                                                                                                                |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **secops-discover-remediation-targets** | Load `.github-secops-agent.json`; discover candidates via **`gh api` + jq** (Dependabot alerts, optional **`pushed_at` / activity**); apply allow/exclude and severity; **orchestrator** defines ordering—no **`ghclt`** batch queue emitter. |
+| **secops-create-remediation-issue**     | Create **issue** with gist prompt + optional assign/project when allowed.                                                                                                                                                                     |
+| **secops-assign-copilot-to-issue**      | Assign **@copilot** on an existing issue.                                                                                                                                                                                                     |
+| **secops-check-pr-checks**              | Find PR; **one-shot** **required checks**; JSON + exit codes (read-only).                                                                                                                                                                     |
+| **secops-inspect-copilot-agent-tasks**  | List/view **Copilot agent task** sessions via `gh agent-task` (preview).                                                                                                                                                                      |
+| **secops-post-ci-nudge-comment**        | Post **nudge** on issue from continuation policy.                                                                                                                                                                                             |
+| **secops-post-remediation-evidence**    | Append **evidence** (MVP: links; target: summary + run log).                                                                                                                                                                                  |
 
 **Composition:** Discover → **Submit** → **Assign Copilot** → **Observe** (repeat on your schedule: checks + agent-task + Project) → **Act** (nudge / evidence / human @mention). **secops-inspect-copilot-agent-tasks** does **not** replace **secops-check-pr-checks** for merge/check gates.
 
@@ -194,7 +194,7 @@ flowchart TB
     BO -->|may delegate| RR
   end
   subgraph skills [Skills and gh]
-    SD[secops-build-dependabot-queue]
+    SD[secops-discover-remediation-targets]
     SS[secops-create-remediation-issue]
     AC[secops-assign-copilot-to-issue]
     SC[secops-check-pr-checks]

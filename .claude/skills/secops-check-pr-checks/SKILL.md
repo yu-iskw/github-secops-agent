@@ -51,7 +51,7 @@ Classification is implemented in **`packages/ghclt`** (TypeScript), matching the
 .claude/skills/secops-check-pr-checks/scripts/check-repo-ci.sh --repo OWNER/REPO --pr NUMBER --no-runs
 ```
 
-**Direct CLI** (after you have JSON files from `gh`; optional **`--runs-json-file`**):
+**Direct CLI** (after you have JSON files from `gh`; optional **`--runs-json-file`**). The binary is **`github-secops-guard`** (**Commander**); **`--config`** belongs on the **`pr-check`** subcommand (or on the root before `pr-check`):
 
 ```bash
 pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
@@ -61,7 +61,7 @@ pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
   [--runs-json-file /tmp/runs.json]
 ```
 
-**Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, **`gh`**. Optional `SECOPS_CONFIG`. Policy guard prevents checks against out-of-policy repos.
+**Prerequisites:** `pnpm --filter @github-secops-agent/ghclt build`, **`gh`**. Optional `SECOPS_CONFIG`. Use **`github-secops-guard --help`** for all subcommands. Policy guard prevents checks against out-of-policy repos.
 
 **Draft, review, and `blocked_manual_ci`:** a PR can show **all rollup checks successful** while **`mergeStateStatus` is `BLOCKED`** and **`outcome` is `blocked_manual_ci`** (exit **3**) — for example **`isDraft: true`**, **`reviewDecision: REVIEW_REQUIRED`**, or branch rules. That is **not** **`green`** in classifier terms (`mergeStateStatus` **CLEAN**). See [docs/secops-observe-flow.md](../../../docs/secops-observe-flow.md).
 
@@ -74,7 +74,7 @@ pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
 **This skill runs once per invocation.** Sub-agents (**secops-repo-runner**, **secops-batch-orchestrator**, or a Task-tool loop) own **polling**:
 
 1. Invoke `check-repo-ci.sh` (or the equivalent `gh` flow above).
-2. If exit code **`2`** and `outcome` is **`pending`** (or **`unknown`** per your policy), **sleep** `orchestration.pollIntervalSeconds` from config, then **invoke again** until green, failing, blocked, or time/round limits.
+2. If exit code **`2`** and `outcome` is **`pending`** (or **`unknown`** per your policy), **sleep** about **120 seconds** (operator-chosen cadence; not in `.github-secops-agent.json`), then **invoke again** until green, failing, blocked, or time/round limits.
 3. On **`failing`** or long **`pending`**, follow **[secops-post-ci-nudge-comment](../secops-post-ci-nudge-comment/SKILL.md)** for nudge rounds and continuation text—**not** infinite nudges.
 4. On **`blocked_manual_ci`** (exit **3**), do not spin—label and notify per nudge skill.
 
@@ -84,7 +84,7 @@ pnpm --filter @github-secops-agent/ghclt exec github-secops-guard pr-check \
 | ------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | `green`             | `mergeStateStatus` is **CLEAN**                                                                                    | **secops-post-remediation-evidence** success path; **secops-project-board-sync** sub-agent Done if policy says so |
 | `failing`           | **UNSTABLE** or any check **FAILURE** / **TIMED_OUT** / **CANCELLED**                                              | **secops-post-ci-nudge-comment** if rounds allow; else mark blocked on repeated failure                           |
-| `pending`           | Checks still **QUEUED** / **IN_PROGRESS** / **WAITING** / **PENDING**                                              | Sub-agent: re-run this skill after **`pollIntervalSeconds`** (or investigate if stuck)                            |
+| `pending`           | Checks still **QUEUED** / **IN_PROGRESS** / **WAITING** / **PENDING**                                              | Sub-agent: re-run after ~**120s** (or investigate if stuck)                                                       |
 | `blocked_manual_ci` | **BLOCKED**, no failures and no in-flight checks in rollup (often approval, policy, or branch rules)—**heuristic** | Label `blocked:manual-ci`, **notify user**, do not spin nudges forever                                            |
 | `unknown`           | Does not match the rollup + merge-state rules above                                                                | Sub-agent: treat like pending or investigate with `gh pr view` / `gh run list`                                    |
 
@@ -101,7 +101,7 @@ gh run list --repo OWNER/REPO --branch BRANCH --limit 15
 ## Nudges and partial (orchestration)
 
 - **Nudge comments** (failing checks, round caps, continuation text): **[secops-post-ci-nudge-comment](../secops-post-ci-nudge-comment/SKILL.md)** and [copilot_continuation.md](../secops-post-ci-nudge-comment/references/copilot_continuation.md).
-- **Partial / timeout** when **elapsed time exceeds orchestration.partialAfterMinutes** without green: mark **partial** for Project + evidence; do **not** claim success—see nudge skill and orchestrator.
+- **Partial / timeout** when **elapsed time exceeds ~60 minutes** without green (convention; not in JSON): mark **partial** for Project + evidence; do **not** claim success—see nudge skill and orchestrator.
 
 ## Constraints
 

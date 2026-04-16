@@ -3,6 +3,17 @@ import type { SecOpsConfig } from '../config/types';
 import { validateTargetRepository } from '../policy/target-policy';
 import { composePrCheckJson, parseGhWorkflowRunsStdout } from './result';
 
+function readUtf8OrExit(path: string, flagLabel: string): string {
+  try {
+    return readFileSync(path, 'utf-8');
+  } catch (e) {
+    process.stderr.write(
+      `secops: failed to read ${flagLabel}: ${e instanceof Error ? e.message : String(e)}\n`,
+    );
+    process.exit(2);
+  }
+}
+
 type PrCheckIngestFlags = {
   repoFull: string;
   prJsonFile: string;
@@ -62,16 +73,9 @@ export function runPrCheckIngest(config: SecOpsConfig, flags: PrCheckIngestFlags
   let workflowRuns: ReturnType<typeof parseGhWorkflowRunsStdout> | undefined;
   let workflowRunsAnalyzed: number | undefined;
   if (flags.runsJsonFile) {
-    try {
-      const text = readFileSync(flags.runsJsonFile, 'utf-8');
-      workflowRuns = parseGhWorkflowRunsStdout(text);
-      workflowRunsAnalyzed = workflowRuns.length;
-    } catch (e) {
-      process.stderr.write(
-        `secops: failed to read --runs-json-file: ${e instanceof Error ? e.message : String(e)}\n`,
-      );
-      process.exit(2);
-    }
+    const text = readUtf8OrExit(flags.runsJsonFile, '--runs-json-file');
+    workflowRuns = parseGhWorkflowRunsStdout(text);
+    workflowRunsAnalyzed = workflowRuns.length;
   }
 
   const { json, exitCode } = composePrCheckJson({

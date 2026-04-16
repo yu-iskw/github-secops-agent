@@ -1,4 +1,5 @@
 import { isRecord } from '../utils/is-record';
+import { parseJsonArrayFromString } from '../utils/parse-json-array';
 import { buildChecksSummary, classifyFromPrView, exitCodeForCiOutcome } from './classify';
 import type {
   BlockedHint,
@@ -28,13 +29,8 @@ export function blockedHintFromRuns(runs: WorkflowRunRow[]): BlockedHint | null 
 
 /** Parse `gh run list --json` stdout into workflow rows. */
 export function parseGhWorkflowRunsStdout(stdout: string): WorkflowRunRow[] {
-  let json: unknown;
-  try {
-    json = JSON.parse(stdout) as unknown;
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(json)) {
+  const json = parseJsonArrayFromString(stdout);
+  if (!json) {
     return [];
   }
   return json.filter(isRecord).map((r) => {

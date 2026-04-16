@@ -9,6 +9,11 @@ export interface GithubProjectConfigFile {
   project_number?: number;
   /** Projects v2 node id (e.g. PVT_kwDO...). */
   project_id?: string;
+  /**
+   * Exact GitHub Project title for `gh issue create --project` / `-p` (same string as `gh project list`).
+   * Optional for validation; submit-copilot-task.sh uses it when no `--project` / SECOPS_DEFAULT_PROJECT.
+   */
+  project_title?: string;
   set_at?: string;
 }
 
@@ -49,6 +54,15 @@ export function validateProjectConfigJson(
   errors.push(...expectOptionalString(parsed.owner, 'owner'));
   errors.push(...expectOptionalString(parsed.repo, 'repo'));
   errors.push(...expectOptionalString(parsed.set_at, 'set_at'));
+
+  if (Object.prototype.hasOwnProperty.call(parsed, 'project_title')) {
+    const pt = parsed.project_title;
+    if (typeof pt !== 'string' || pt.trim().length === 0) {
+      errors.push(
+        'project_title must be a non-empty string when set (GitHub Project title for gh issue create --project)',
+      );
+    }
+  }
 
   if (parsed.project_number !== undefined) {
     if (

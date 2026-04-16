@@ -11,7 +11,6 @@ const baseOrg = (overrides?: Partial<SecOpsConfig['organizations'][0]>): SecOpsC
   organizations: [
     {
       id: 'acme',
-      includedRepositories: [],
       excludedRepositories: ['acme/skip-*'],
       discovery: {
         mode: 'dependabot_alerts',
@@ -23,12 +22,6 @@ const baseOrg = (overrides?: Partial<SecOpsConfig['organizations'][0]>): SecOpsC
   orchestration: {
     priority: ['severity'],
     nudgeRounds: 10,
-    pollIntervalSeconds: 45,
-    partialAfterMinutes: 120,
-  },
-  evidence: {
-    mode: 'mvp_links_only',
-    targetMode: 'structured_plus_run_log',
   },
 });
 
@@ -52,17 +45,9 @@ describe('validateTargetRepository', () => {
     if (!r.ok) expect(r.reason).toContain('excluded');
   });
 
-  it('allows repo when included empty', () => {
+  it('allows repo when not excluded', () => {
     const r = validateTargetRepository(baseOrg(), 'acme/allowed');
     expect(r.ok).toBe(true);
-  });
-
-  it('requires included when non-empty', () => {
-    const cfg = baseOrg({
-      includedRepositories: ['acme/app-*'],
-    });
-    expect(validateTargetRepository(cfg, 'acme/app-web').ok).toBe(true);
-    expect(validateTargetRepository(cfg, 'acme/other').ok).toBe(false);
   });
 });
 

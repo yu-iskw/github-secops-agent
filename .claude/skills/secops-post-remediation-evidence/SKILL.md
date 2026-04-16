@@ -1,20 +1,20 @@
 ---
 name: secops-post-remediation-evidence
-description: Post remediation closeout / evidence on the SecOps issue per evidence.mode—MVP links-only or structured summary plus orchestrator run log. Uses gh issue comment and gh api.
+description: Post remediation closeout / evidence on the SecOps issue—MVP links-only or structured summary plus orchestrator run log (format per skill conventions; not configured in JSON). Uses gh issue comment and gh api.
 ---
 
 # secops-post-remediation-evidence
 
-**Workflow:** **Act** / closeout — post evidence via **`gh`** per **`evidence`** in `.github-secops-agent.json`. See [docs/product_design.md](../../../docs/product_design.md).
+**Workflow:** **Act** / closeout — post evidence via **`gh`** using the **MVP vs structured** conventions below (see [docs/product_design.md](../../../docs/product_design.md) — Visibility / Evidence).
 
 ## When to use
 
 - When a repo thread reaches **green**, **partial**, or **blocked**.
-- At the end of each **nudge round** if `evidence.targetMode` requires a run log.
+- At the end of each **nudge round** when you are targeting **structured + run log** (not links-only MVP).
 
 ## Inputs
 
-- `.github-secops-agent.json` → **`evidence.mode`** (`mvp_links_only` | future structured).
+- **MVP:** treat as **`mvp_links_only`** unless the team agreed to structured closeout for this run.
 - **Artifacts:** issue URL, PR URL, list of **GHSA/CVE** addressed (from Copilot or discovery), **commands** or **CI job names** referenced.
 
 ## MVP: links-only

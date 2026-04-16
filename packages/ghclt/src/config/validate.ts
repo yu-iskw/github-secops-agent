@@ -1,7 +1,6 @@
 import type { SecOpsConfig } from './types';
+import { DEPENDABOT_SEVERITY_ORDER, DEPENDABOT_SEVERITY_SET } from './severity';
 import { isRecord } from '../utils/is-record';
-
-const SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
 
 /** GitHub username / org login (simplified; no consecutive hyphens enforcement). */
 const GH_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$/;
@@ -30,8 +29,10 @@ function validateDiscovery(discovery: Record<string, unknown>, i: number): strin
 
   const sev = expectString(discovery.minimumSeverity, `${prefix}.minimumSeverity`);
   if (Array.isArray(sev)) errors.push(...sev);
-  else if (!SEVERITIES.has(sev.toLowerCase())) {
-    errors.push(`${prefix}.minimumSeverity must be one of: ${[...SEVERITIES].join(', ')}`);
+  else if (!DEPENDABOT_SEVERITY_SET.has(sev.toLowerCase())) {
+    errors.push(
+      `${prefix}.minimumSeverity must be one of: ${DEPENDABOT_SEVERITY_ORDER.join(', ')}`,
+    );
   }
 
   if (discovery.preferPerRepo !== undefined && typeof discovery.preferPerRepo !== 'boolean') {
@@ -51,11 +52,6 @@ function validateOrganization(org: unknown, i: number): string[] {
   if (Array.isArray(id)) errors.push(...id);
 
   errors.push(
-    ...validateOptionalStringArray(
-      org.includedRepositories,
-      `organizations[${i}]`,
-      'includedRepositories',
-    ),
     ...validateOptionalStringArray(
       org.excludedRepositories,
       `organizations[${i}]`,
@@ -91,7 +87,7 @@ function validateOrchestration(o: Record<string, unknown>): string[] {
       'orchestration.maxConcurrentRepos was removed; control batch parallelism in your orchestrator (shell, CI, or agent fan-out), not in .github-secops-agent.json — see docs/product_design.md',
     );
   }
-  const numericFields: string[] = ['nudgeRounds', 'pollIntervalSeconds', 'partialAfterMinutes'];
+  const numericFields: string[] = ['nudgeRounds'];
   for (const label of numericFields) {
     const v = o[label];
     if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) {
@@ -105,15 +101,6 @@ function validateOrchestration(o: Record<string, unknown>): string[] {
   ) {
     errors.push('orchestration.priority must be a non-empty string array');
   }
-  return errors;
-}
-
-function validateEvidence(ev: Record<string, unknown>): string[] {
-  const errors: string[] = [];
-  const mode = expectString(ev.mode, 'evidence.mode');
-  if (Array.isArray(mode)) errors.push(...mode);
-  const tm = expectString(ev.targetMode, 'evidence.targetMode');
-  if (Array.isArray(tm)) errors.push(...tm);
   return errors;
 }
 
@@ -213,12 +200,6 @@ export function validateSecopsConfig(
     errors.push('orchestration must be an object');
   } else {
     errors.push(...validateOrchestration(input.orchestration));
-  }
-
-  if (!isRecord(input.evidence)) {
-    errors.push('evidence must be an object');
-  } else {
-    errors.push(...validateEvidence(input.evidence));
   }
 
   if (input.notifications !== undefined) {

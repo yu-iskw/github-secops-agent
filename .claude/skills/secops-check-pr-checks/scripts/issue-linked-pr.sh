@@ -58,6 +58,8 @@ OWNER="${REPO%%/*}"
 NAME="${REPO#*/}"
 [[ $OWNER != "$REPO" && -n $NAME ]] || die "invalid repo: $REPO (expected OWNER/REPO)"
 
+# GraphQL uses $ for variables (not shell). Single-quoted so bash does not expand; SC2016 is a false positive here.
+# shellcheck disable=SC2016
 QUERY='query($o:String!,$n:String!,$i:Int!){
   repository(owner:$o,name:$n){
     issue(number:$i){
@@ -74,7 +76,6 @@ QUERY='query($o:String!,$n:String!,$i:Int!){
   }
 }'
 
-# shellcheck disable=SC2016
 gh api graphql \
 	-f query="$QUERY" \
 	-f o="$OWNER" \

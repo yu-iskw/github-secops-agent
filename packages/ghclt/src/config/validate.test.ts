@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import type { SecOpsConfig } from './types';
 import { validateSecopsConfig } from './validate';
 
-const validConfig = {
+/** Exported for JSON Schema contract tests (`secops-config.schema.test.ts`). */
+export const validConfig = {
   version: 1,
   organizations: [
     {
       id: 'acme',
-      includedRepositories: [],
       excludedRepositories: ['acme/skip'],
       discovery: {
         mode: 'dependabot_alerts',
@@ -18,12 +18,6 @@ const validConfig = {
   orchestration: {
     priority: ['severity'],
     nudgeRounds: 10,
-    pollIntervalSeconds: 45,
-    partialAfterMinutes: 120,
-  },
-  evidence: {
-    mode: 'mvp_links_only',
-    targetMode: 'structured_plus_run_log',
   },
 };
 

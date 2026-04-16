@@ -1,16 +1,16 @@
 ---
 name: secops-create-remediation-issue
-description: Create a SecOps remediation issue on the target repo (after policy guard) with optional @copilot assign and Project in one step when policy allows. For assign-after-Project, use secops-assign-copilot-to-issue. Uses gh issue create; does not push branch code.
+description: Create a SecOps remediation issue on the target repo (after policy guard). Link a GitHub Project at create time via --project (gh issue create -p); optional @copilot assign. For assign-after-Project, use secops-assign-copilot-to-issue. Uses gh issue create; does not push branch code.
 ---
 
 # secops-create-remediation-issue
 
-**Workflow:** **Submit** phase — run the shell script below directly (no mega-wrapper). For Project **node id** in `gh api` flows, use repo-root **`project-config.json`** ([template](../../../project-config.json.template)), not `.github-secops-agent.json`. See [docs/product_design.md](../../../docs/product_design.md).
+**Workflow:** **Submit** phase — run the shell script below directly (no mega-wrapper). For Project **node id** and **`project_title`** (`gh issue create --project`), use repo-root **`project-config.json`** ([template](../../../project-config.json.template)), not `.github-secops-agent.json`. See [docs/product_design.md](../../../docs/product_design.md).
 
 ## When to use
 
 - **Create** a tracked remediation issue when a repo is dequeued.
-- If the org requires **Project link before Copilot**, create the issue **without** `--assign-copilot`, run **secops-project-board-sync**, then **secops-assign-copilot-to-issue**. Or use `--assign-copilot` / `--project` in one shot when allowed. Details: [references/gh-issue-copilot.md](references/gh-issue-copilot.md).
+- If the org requires **Project link before Copilot**, create the issue **with `--project`** but **without** `--assign-copilot`, then **secops-assign-copilot-to-issue** (and **secops-project-board-sync** for fields if needed). Or use `--assign-copilot` and `--project` in one shot when allowed. Details: [references/gh-issue-copilot.md](references/gh-issue-copilot.md).
 - **Comment** or relabel via **gh-issue-management** when the github-project-skills plugin is available.
 
 ## Inputs
@@ -19,12 +19,12 @@ description: Create a SecOps remediation issue on the target repo (after policy 
 - **Alert context:** GHSA/CVE summaries for the issue body (append after the canonical prompt).
 - **Canonical prompt (in-repo):** [references/security_remedation_prompt.md](references/security_remedation_prompt.md) — **authoritative** instruction block for Copilot; versioned with this repository.
 - **Optional external mirror:** [Supply-chain remediation gist](https://gist.github.com/yu-iskw/7a7412abd7d332fc09f428b8d0d90998) — use if your org standardizes on the URL; keep content aligned with the reference file above.
-- **Project:** On-create `--project` (script), or link later via the **secops-project-board-sync** sub-agent (Task tool) / **gh-project-management**.
+- **Project (required at create):** pass **`--project "Exact board title"`** to [submit-copilot-task.sh](scripts/submit-copilot-task.sh) (maps to `gh issue create -p`; needs `gh auth refresh -s project`), **or** set **`SECOPS_DEFAULT_PROJECT`**, **or** set **`project_title`** in repo-root **`project-config.json`** (resolved after CLI flags and env). **`--no-project`** is an escape hatch only (prints a warning). Repair paths: **`gh issue edit --add-project`** or **secops-project-board-sync** / **gh-project-management** for issues created without `-p`, or extra boards / fields—not a substitute for create-time linking when you control the create command.
 
 ## Workflow (Issue → Project → Copilot)
 
-1. **Create issue** — [scripts/submit-copilot-task.sh](scripts/submit-copilot-task.sh) (`--repo`, `--body-file`, optional `--title`, `--assign-copilot`, `--project`). Prerequisites: `pnpm --filter @github-secops-agent/ghclt build`, `gh`; optional `SECOPS_CONFIG`. Or raw `gh issue create --repo … --body-file …` after **`github-secops-guard validate-repo`** on that repo.
-2. Link to batch Project and set **Status** — **secops-project-board-sync** sub-agent (Task tool).
+1. **Create issue** — [scripts/submit-copilot-task.sh](scripts/submit-copilot-task.sh) (`--repo`, `--body-file`, **`--project`** or `SECOPS_DEFAULT_PROJECT` or **`project_title` in `project-config.json`**, optional `--title`, `--assign-copilot`). Prerequisites: `pnpm --filter @github-secops-agent/ghclt build`, `gh`; optional `SECOPS_CONFIG`. Or raw `gh issue create --repo … --body-file … --project …` after **`github-secops-guard validate-repo`** on that repo.
+2. Set **Status** / board fields — **secops-project-board-sync** sub-agent (Task tool) when automations do not cover it.
 3. Assign Copilot if not done in step 1 — **[secops-assign-copilot-to-issue](../secops-assign-copilot-to-issue/SKILL.md)** / [assign-copilot-issue.sh](../secops-assign-copilot-to-issue/scripts/assign-copilot-issue.sh) or `gh issue edit … --add-assignee "@copilot"`.
 
 One-shot on create: `--assign-copilot` and repeated `--project "Title"` (needs `gh auth refresh -s project`). Wrapper details: `submit-copilot-task.sh --help`. Richer edits: **gh-issue-management** per [github-project-skills](https://github.com/yu-iskw/github-project-skills).
@@ -45,7 +45,9 @@ Concatenate the security reference with **Tracking** / **Alerts** (and any orche
 } > /tmp/secops-task.md
 
 .claude/skills/secops-create-remediation-issue/scripts/submit-copilot-task.sh \
-  --repo OWNER/REPO --body-file /tmp/secops-task.md --assign-copilot
+  --repo OWNER/REPO --body-file /tmp/secops-task.md \
+  --assign-copilot \
+  --project "[SecOps] security remediation"
 ```
 
 ## Issue body structure

@@ -4,7 +4,7 @@ Use this text when posting **nudge** comments on the SecOps issue (after [secops
 
 ## Principles
 
-1. **Keep working** on the same PR until **required** status checks pass—within orchestration limits (`nudgeRounds`, `partialAfterMinutes` in config).
+1. **Keep working** on the same PR until **required** status checks pass—within **orchestration.nudgeRounds** and typical **~60 minute** partial-timeout convention (not in JSON).
 2. **Do not** merge or declare success while **security or required** checks are red; do not narrow scan scope or disable workflows to fake green.
 3. If **manual approval** or **environment protection** blocks a job (no code fix will unblock), **stop nudging**, label or mark `blocked:manual-ci`, and **notify a human**—do not loop forever.
 4. Reference the **failing check names** and **round `n` / `max`** in each nudge so operators can audit.

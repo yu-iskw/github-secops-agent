@@ -44,17 +44,6 @@ export function validateTargetRepository(
     }
   }
 
-  const included = orgEntry.includedRepositories ?? [];
-  if (included.length > 0) {
-    const matches = included.some((p) => matchRepositoryPattern(normalized, p.toLowerCase()));
-    if (!matches) {
-      return {
-        ok: false,
-        reason: `Repository "${trimmed}" does not match any includedRepositories entry`,
-      };
-    }
-  }
-
   return { ok: true };
 }
 

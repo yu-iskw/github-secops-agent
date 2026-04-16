@@ -10,7 +10,7 @@ Accepted
 
 Copilot agent work can run for a long time (tens of minutes per turn). Embedding a **continuous poll loop** inside a single Claude Code session is costly and easy to rate-limit. Operators still need a **clear operational model**: enqueue work, understand progress, and act (nudge Copilot, notify humans, post evidence).
 
-Separately, **GitHub Project (v2) binding** (Projects node id, org/repo metadata) is orthogonal to **SecOps policy** (orgs, allowlists, orchestration, evidence, notification mentions). Duplicating Project identity inside `.github-secops-agent.json` created coupling and validation that compared two files for the same id.
+Separately, **GitHub Project (v2) binding** (Projects node id, org/repo metadata) is orthogonal to **SecOps policy** (orgs, exclusions, orchestration, notification mentions). Evidence cadence and formats are documented in skills, not duplicated in policy JSON. Duplicating Project identity inside `.github-secops-agent.json` created coupling and validation that compared two files for the same id.
 
 ## Decision
 

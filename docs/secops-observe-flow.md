@@ -5,7 +5,7 @@ Single ordered recipe for the **Observe** plane when tracking a dependency remed
 ## Prerequisites
 
 - **GitHub CLI:** `gh` authenticated for the target org/repo.
-- **Policy guard:** [`.github-secops-agent.json`](../.github-secops-agent.json) (or `SECOPS_CONFIG`) so `validate-repo` accepts **`OWNER/REPO`** before scripts call `gh`.
+- **Policy guard:** `.github-secops-agent.json` at the repo root (or `SECOPS_CONFIG`) so `validate-repo` accepts **`OWNER/REPO`** before scripts call `gh`.
 - **ghclt built:** `pnpm --filter @github-secops-agent/ghclt build` (required by `check-repo-ci.sh` and agent-task wrapper scripts).
 
 ## Step A — Resolve issue → PR number

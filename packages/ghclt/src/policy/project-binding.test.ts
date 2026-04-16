@@ -38,4 +38,20 @@ describe('validateProjectConfigJson', () => {
     const r = validateProjectConfigJson({ project_id: 'PVT_a', project_number: 0 });
     expect(r.ok).toBe(false);
   });
+
+  it('accepts project_title when non-empty', () => {
+    const r = validateProjectConfigJson({
+      project_id: 'PVT_kwX',
+      project_title: '[SecOps] security remediation',
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('rejects empty project_title when set', () => {
+    const r = validateProjectConfigJson({ project_id: 'PVT_kwX', project_title: '   ' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.some((e) => e.includes('project_title'))).toBe(true);
+    }
+  });
 });

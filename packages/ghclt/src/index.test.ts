@@ -4,7 +4,7 @@ import * as api from './index';
 describe('public API barrel', () => {
   it('exports core functions', () => {
     expect(typeof api.validateSecopsConfig).toBe('function');
-    expect(typeof api.runDiscoverQueue).toBe('function');
+    expect(typeof api.severityRank).toBe('function');
     expect(typeof api.parseGhWorkflowRunsStdout).toBe('function');
     expect(typeof api.validateTargetRepository).toBe('function');
     expect(typeof api.classifyFromPrView).toBe('function');

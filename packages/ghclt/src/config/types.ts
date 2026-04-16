@@ -13,14 +13,12 @@ export interface SecOpsConfig {
   version: number;
   organizations: SecOpsOrganization[];
   orchestration: SecOpsOrchestration;
-  evidence: SecOpsEvidence;
   /** Optional; when set, validated by ghclt. */
   notifications?: SecOpsNotifications;
 }
 
 export interface SecOpsOrganization {
   id: string;
-  includedRepositories?: string[];
   excludedRepositories?: string[];
   discovery: {
     mode: string;
@@ -33,11 +31,4 @@ export interface SecOpsOrganization {
 export interface SecOpsOrchestration {
   priority: string[];
   nudgeRounds: number;
-  pollIntervalSeconds: number;
-  partialAfterMinutes: number;
-}
-
-export interface SecOpsEvidence {
-  mode: string;
-  targetMode: string;
 }

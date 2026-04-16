@@ -11,9 +11,12 @@
     "github-secops-guard": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && node scripts/copy-schema.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
   }
 }

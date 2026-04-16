@@ -1,12 +1,12 @@
 export type {
   SecOpsConfig,
-  SecOpsEvidence,
   SecOpsNotifications,
   SecOpsOrchestration,
   SecOpsOrganization,
 } from './config/types';
 
 export { validateSecopsConfig } from './config/validate';
+export { severityRank } from './config/severity';
 
 export {
   GH_PR_VIEW_JSON_FIELDS,
@@ -45,13 +45,3 @@ export {
   validateProjectConfigJson,
 } from './policy/project-binding';
 export type { GithubProjectConfigFile } from './policy/project-binding';
-
-export { runDiscoverQueue, severityRank, sortReposByPriority } from './queue/discover-queue';
-export type {
-  DiscoverQueueAlert,
-  DiscoverQueueOrg,
-  DiscoverQueueOutput,
-  DiscoverQueueRepo,
-  DiscoverSource,
-  GhRunner,
-} from './queue/discover-queue';
